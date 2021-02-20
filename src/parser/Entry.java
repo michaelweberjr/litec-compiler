@@ -1,5 +1,6 @@
 package parser;
 
+import java.io.FileWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -16,5 +17,8 @@ public class Entry {
 		Parser parser = new Parser(tokenizer.tokens);
 		Optimizer.optimize(parser.program);
 		parser.printParserTree();
+		FileWriter file = new FileWriter("test.asm");
+		CodeGenerator.generate(file, parser.program);
+		file.close();
 	}
 }

@@ -1,2 +1,6 @@
 bin/*
 .settings/*
+*.asm
+*.exe
+*.obj
+*.o

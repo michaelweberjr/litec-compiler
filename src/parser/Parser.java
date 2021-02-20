@@ -69,7 +69,7 @@ public class Parser {
 		Token t = tokens.peek();
 		if(t.type == TokenType.RBRA || t.type == TokenType.SC) return;
 		
-		if(t.type ==TokenType.INT) parseVariableDec(tokens, fn, node);
+		if(t.type == TokenType.INT) parseVariableDec(tokens, fn, node);
 		else if(t.type == TokenType.SYM) {
 			boolean isFn = false;
 			FunctionTree callee = null;
@@ -92,25 +92,31 @@ public class Parser {
 	}
 	
 	private void parseAssignment(Deque<Token> tokens, FunctionTree fn, Node<Token> node) throws Exception {
-		boolean notFoundVar = true;
-		for(Symbol var : fn.frameVar) 
+		int varOffset = -1;
+		for(int i = 0; i < fn.frameVar.size(); i++) {
+			Symbol var = fn.frameVar.get(i);
 			if(var.name.equals(tokens.peek().sym.name)) {
-				notFoundVar = false;
+				varOffset = i;
 				break;
 			}
+		}
 		
-		if(notFoundVar)
-			for(Symbol var : fn.argsList) 
+		if(varOffset < 0)
+			for(int i = 0; i < fn.argsList.size(); i++) {
+				Symbol var = fn.argsList.get(i);
 				if(var.name.equals(tokens.peek().sym.name)) {
-					notFoundVar = false;
+					varOffset = fn.frameVar.size() + 1 + i;
 					break;
 				}
+			}
 		
-		if(notFoundVar) throw new Exception("Undefined identifier: " + tokens.peek().sym.name);
+		if(varOffset < 0) throw new Exception("Undefined identifier: " + tokens.peek().sym.name);
 		
 		Node<Token> n = new Node<Token>(new Token(TokenType.EQ));
 		node.addChild(n);
-		n.addChild(tokens.poll());
+		Token t = tokens.poll();
+		t.val = varOffset;
+		n.addChild(t);
 		popToken(tokens, TokenType.EQ, "Expected \'=\' after variable name");
 		parseMathExp(tokens, fn, n);
 	}
@@ -119,24 +125,21 @@ public class Parser {
 		tokens.poll();
 		if(tokens.peek().type != TokenType.SYM) throw new Exception("Expceted variable name");
 		
-		boolean notFoundVar = true;
+		boolean foundVar = false;
 		for(Symbol var : fn.frameVar) 
 			if(var.name.equals(tokens.peek().sym.name)) {
-				notFoundVar = false;
+				foundVar = true;
 				break;
 			}
 		
-		if(notFoundVar)
+		if(!foundVar)
 			for(Symbol var : fn.argsList) 
 				if(var.name.equals(tokens.peek().sym.name)) {
-					notFoundVar = false;
+					foundVar = true;
 					break;
 				}
 		
-		if(notFoundVar)
-			if(tokens.peek().sym.name.equals(fn.name.name))
-		
-		if(!notFoundVar) throw new Exception("Redifinition of identifier: " + tokens.peek().sym.name);
+		if(foundVar) throw new Exception("Redifinition of identifier: " + tokens.peek().sym.name);
 		
 		fn.frameVar.add(tokens.peek().sym);
 		tokens.peek().sym.setVar();
@@ -194,21 +197,26 @@ public class Parser {
 				output.add(new Node<Token>(t));
 			}
 			else if(t.type == TokenType.SYM) {
-				boolean foundVar = false;
-				for(Symbol s : fn.argsList)
+				int varOffset = -1;
+				for(int i = 0; i < fn.argsList.size(); i++) {
+					Symbol s = fn.argsList.get(i);
 					if(s.name.equals(t.sym.name)) {
-						foundVar = true;
+						varOffset = fn.frameVar.size() + 1 + i;
 						break;
 					}
+				}
 				
-				if(!foundVar)
-					for(Symbol s : fn.frameVar)
+				if(varOffset < 0)
+					for(int i = 0; i < fn.frameVar.size(); i++) {
+						Symbol s = fn.frameVar.get(i);
 						if(s.name.equals(t.sym.name)) {
-							foundVar = true;
+							varOffset = i;
 							break;
 						}
+					}
 				
-				if(foundVar) {
+				if(varOffset >= 0) {
+					t.val = varOffset;
 					output.add(new Node<Token>(t));
 					continue;
 				}
@@ -288,14 +296,7 @@ public class Parser {
 	}
 	
 	private void addBuiltInFunctions() {
-		// print function
-		FunctionTree print = new FunctionTree();
-		print.name = new Symbol("print");
-		(print.argsList = new ArrayList<Symbol>()).add(new Symbol("text"));
-		print.returnType = new Token(TokenType.RET);
-		print.isBuiltIn = true;
-		program.add(print);
-		
+		program.add(BuiltInFunction.printFnTree());
 	}
 	
 	public void printParserTree() {

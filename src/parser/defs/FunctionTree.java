@@ -12,6 +12,7 @@ public class FunctionTree {
 	public Token returnType;
 	public boolean hasReturn;
 	public boolean isBuiltIn;
+	public String builtInCode;
 	
 	public FunctionTree()
 	{
