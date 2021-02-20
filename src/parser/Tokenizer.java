@@ -74,7 +74,7 @@ public class Tokenizer {
 				tokens.add(new Token(TokenType.LBRA));
 				break;
 			case '}':
-				tokens.add(new Token(TokenType.LBRA));
+				tokens.add(new Token(TokenType.RBRA));
 				break;
 			case '=':
 				tokens.add(new Token(TokenType.EQ));

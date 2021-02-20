@@ -12,4 +12,8 @@ public class Tree<S> {
 	{
 		this.root = null;
 	}
+	
+	public int maxDepth() {
+		return root.maxDepth();
+	}
 }

@@ -6,7 +6,7 @@ int square(int x)
 void main()
 {
 	int y = 2;
-	int z = square(5);
+	int z = square(2+3);
 	z = z + 1;
 	print(y + 2 * z);
 }

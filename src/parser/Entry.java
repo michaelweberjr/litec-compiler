@@ -6,7 +6,6 @@ import java.nio.file.Path;
 public class Entry {
 
 	public static void main(String[] args) throws Exception {
-		// TODO Auto-generated method stub
 		String text = Files.readString(Path.of("test.cl"));
 		runParser(text);	
 	}
@@ -15,6 +14,7 @@ public class Entry {
 	{
 		Tokenizer tokenizer = new Tokenizer(text);
 		Parser parser = new Parser(tokenizer.tokens);
+		Optimizer.optimize(parser.program);
 		parser.printParserTree();
 	}
 }

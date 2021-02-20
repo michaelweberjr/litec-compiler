@@ -21,4 +21,8 @@ public class Token {
 		this.type = type;
 		this.sym = sym;
 	}
+	
+	public boolean opEquals(Object e) {
+		return ((Token) e).type == this.type;
+	}
 }

@@ -11,6 +11,7 @@ public class FunctionTree {
 	public ArrayList<Symbol> frameVar;
 	public Token returnType;
 	public boolean hasReturn;
+	public boolean isBuiltIn;
 	
 	public FunctionTree()
 	{
@@ -19,5 +20,6 @@ public class FunctionTree {
 		this.argsList = new ArrayList<Symbol>();
 		this.frameVar = new ArrayList<Symbol>();
 		this.hasReturn = false;
+		this.isBuiltIn = false;
 	}
 }
