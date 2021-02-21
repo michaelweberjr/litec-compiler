@@ -17,7 +17,8 @@ public class Node<S> {
 		children.add(new Node<S>(val));
 	}
 	
-	public void addChild(Node<S> child) {
+	public void addChild(Node<S> child) throws Exception {
+		if(child == null) throw new Exception("Child node must not be null!");
 		children.add(child);
 	}
 	

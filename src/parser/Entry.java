@@ -16,7 +16,6 @@ public class Entry {
 		Tokenizer tokenizer = new Tokenizer(text);
 		Parser parser = new Parser(tokenizer.tokens);
 		Optimizer.optimize(parser.program);
-		parser.printParserTree();
 		FileWriter file = new FileWriter("test.asm");
 		CodeGenerator.generate(file, parser.program);
 		file.close();

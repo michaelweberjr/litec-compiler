@@ -268,7 +268,7 @@ public class Parser {
 		while(!output.isEmpty()) {
 			node.addChild(output.pollLast());
 			node = node.children.get(node.children.size()-1);
-			node.addChild(output.poll());
+			if(!output.isEmpty()) node.addChild(output.poll());
 		}
 	}
 	

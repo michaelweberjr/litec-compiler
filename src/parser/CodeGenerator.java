@@ -50,14 +50,35 @@ public class CodeGenerator {
 	}
 
 	private static void generateAssignment(FileWriter file, Node<Token> node) throws Exception {
-		if(node.children.get(1).val.type == TokenType.CALL) generateCall(file, node.children.get(1));
-		else generateMath(file, node.children.get(1));
-		file.write("\tmov\t[rsp+" + (memoryWidth * node.children.get(0).val.val) + "], rbx\n");
+		if(node.children.get(1).val.type == TokenType.CALL) {
+			generateCall(file, node.children.get(1));
+			file.write("\tmov\t[rsp+" + (memoryWidth * node.children.get(0).val.val) + "], rax\n");
+		}
+		else if(node.children.get(1).val.type == TokenType.NUM) {
+			file.write("\tmov\t[rsp+" + (memoryWidth * node.children.get(0).val.val) + "], " + node.children.get(1).val.val + "\n");
+		}
+		else if(node.children.get(1).val.type == TokenType.SYM) {
+			file.write("\tmov\t[rsp+" + (memoryWidth * node.children.get(0).val.val) + "], [rsp+" + (memoryWidth * node.children.get(1).val.val) + "]\n");
+		}
+		else { 
+			generateMath(file, node.children.get(1));
+			file.write("\tmov\t[rsp+" + (memoryWidth * node.children.get(0).val.val) + "], rbx\n");
+		}
 	}
 	
 	private static void generateCall(FileWriter file, Node<Token> node) throws Exception {
 		for(int i = node.children.size() - 1; i > 0; i--) {
-			if(node.children.get(i) != null) {
+			if(node.children.get(i).val.type == TokenType.NUM) {
+				file.write("\tpush\t" + node.children.get(i).val.val + "\n");
+			}
+			else if(node.children.get(i).val.type == TokenType.SYM) {
+				file.write("\tpush\t[rsp+" + (memoryWidth * node.children.get(i).val.val) + "]\n");
+			}
+			else if(node.children.get(i).val.type == TokenType.CALL) {
+				generateCall(file, node.children.get(i));
+				file.write("\tpush\trax\n");
+			}
+			else {
 				generateMath(file, node.children.get(i));
 				file.write("\tpush\trbx\n");
 			}
