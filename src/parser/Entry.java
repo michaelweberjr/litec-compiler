@@ -7,6 +7,7 @@ import java.nio.file.Path;
 public class Entry {
 
 	public static void main(String[] args) throws Exception {
+		ParserError.fileName = "text.cl";
 		String text = Files.readString(Path.of("test.cl"));
 		runParser(text);	
 	}

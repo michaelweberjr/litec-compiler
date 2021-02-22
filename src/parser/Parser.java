@@ -20,8 +20,9 @@ public class Parser {
 	}
 	
 	private void parseFunction(Deque<Token> tokens) throws Exception {
-		
+		popTokenNL(tokens);
 		Token t = tokens.peek();
+		
 		if(t.type == TokenType.INT || t.type == TokenType.VOID) {
 			FunctionTree fn = new FunctionTree();
 			fn.returnType = tokens.remove();
@@ -38,6 +39,7 @@ public class Parser {
 				while(true) {
 					popToken(tokens, TokenType.INT, "Expected variable type in function definition");
 					fn.argsList.add(popToken(tokens, TokenType.SYM, "Expected variable name in function difinition").sym);
+					popTokenNL(tokens);
 					if(tokens.peek().type == TokenType.COMMA) {
 						tokens.poll();
 					}
@@ -50,7 +52,7 @@ public class Parser {
 			popToken(tokens, TokenType.RPAR, "Missing \')\' in function defintion");
 			popToken(tokens, TokenType.LBRA, "Missing \'{\' in function defintion");
 			
-			
+			popTokenNL(tokens);
 			while(tokens.peek().type != TokenType.RBRA) {
 				parseStatement(tokens, fn, fn.statements.root);
 			}
@@ -58,15 +60,16 @@ public class Parser {
 			popToken(tokens, TokenType.RBRA, "Missing \'}\' in function defintion");
 			
 			if(fn.returnType.type != TokenType.VOID && !fn.hasReturn) 
-				throw new Exception("Missing return statement in function: " + fn.name.name);
+				throw new ParserError("Missing return statement in function: " + fn.name.name);
 			
 			program.add(fn);
 		}
-		else throw new Exception("Missing type for function definition");
+		else throw new ParserError("Missing type for function definition");
 	}
 	
 	private void parseStatement(Deque<Token> tokens, FunctionTree fn, Node<Token> node) throws Exception {
-		Token t = tokens.peek();
+		popTokenNL(tokens);
+		Token t = tokens.peek();	
 		if(t.type == TokenType.RBRA || t.type == TokenType.SC) return;
 		
 		if(t.type == TokenType.INT) parseVariableDec(tokens, fn, node);
@@ -110,7 +113,7 @@ public class Parser {
 				}
 			}
 		
-		if(varOffset < 0) throw new Exception("Undefined identifier: " + tokens.peek().sym.name);
+		if(varOffset < 0) throw new ParserError("Undefined identifier: " + tokens.peek().sym.name);
 		
 		Node<Token> n = new Node<Token>(new Token(TokenType.EQ));
 		node.addChild(n);
@@ -123,7 +126,8 @@ public class Parser {
 	
 	private void parseVariableDec(Deque<Token> tokens, FunctionTree fn, Node<Token> node) throws Exception {
 		tokens.poll();
-		if(tokens.peek().type != TokenType.SYM) throw new Exception("Expceted variable name");
+		popTokenNL(tokens);
+		if(tokens.peek().type != TokenType.SYM) throw new ParserError("Expceted variable name");
 		
 		boolean foundVar = false;
 		for(Symbol var : fn.frameVar) 
@@ -139,12 +143,13 @@ public class Parser {
 					break;
 				}
 		
-		if(foundVar) throw new Exception("Redifinition of identifier: " + tokens.peek().sym.name);
+		if(foundVar) throw new ParserError("Redifinition of identifier: " + tokens.peek().sym.name);
 		
 		fn.frameVar.add(tokens.peek().sym);
 		tokens.peek().sym.setVar();
 		
 		Token t = tokens.poll();
+		popTokenNL(tokens);
 		if(tokens.peek().type == TokenType.EQ) {
 			tokens.addFirst(t);
 			parseAssignment(tokens, fn, node);
@@ -157,11 +162,13 @@ public class Parser {
 		n.addChild(tokens.poll());
 		popToken(tokens, TokenType.LPAR, "Expceted \'(\' in function call");
 		while(tokens.peek().type != TokenType.RPAR) {
+			popTokenNL(tokens);
 			parseMathExp(tokens, fn, n);
+			popTokenNL(tokens);
 			if(tokens.peek().type == TokenType.COMMA) tokens.poll();
 		}
 		if(n.children.size() != callee.argsList.size()+1)
-			throw new Exception("Function call to " + callee.name.name + " with " + n.children.size() + " arguments, function call requires " + callee.argsList.size());
+			throw new ParserError("Function call to " + callee.name.name + " with " + n.children.size() + " arguments, function call requires " + callee.argsList.size());
 		popToken(tokens, TokenType.RPAR, "Expceted \')\' in function call");
 	}
 	
@@ -169,12 +176,13 @@ public class Parser {
 		tokens.poll();
 		Node<Token> n = new Node<Token>(new Token(TokenType.RET));
 		node.addChild(n);
+		popTokenNL(tokens);
 		if(tokens.peek().type == TokenType.SC) {
 			if(fn.returnType.type == TokenType.VOID) {
 				fn.hasReturn = true;
 				return;
 			}
-			else throw new Exception("Function " + fn.name.name + "requires a math expresion when returning"); 
+			else throw new ParserError("Function " + fn.name.name + "requires a math expresion when returning"); 
 		}
 		
 		parseMathExp(tokens, fn, n);
@@ -187,6 +195,7 @@ public class Parser {
 		Node<Token> nodeTest = new Node<Token>(new Token(TokenType.LPAR));
 		
 		while(true) {
+			popTokenNL(tokens);
 			Token t = tokens.poll();
 			if(t.type == TokenType.SC || t.type == TokenType.COMMA || (t.type == TokenType.RPAR && !stack.contains(nodeTest))) {
 				tokens.addFirst(t);
@@ -267,10 +276,18 @@ public class Parser {
 	}
 	
 	private Token popToken(Deque<Token> tokens, TokenType type, String errorMsg) throws Exception {
+		popTokenNL(tokens);
 		Token t = tokens.poll();
-		if(t == null) throw new Exception(errorMsg);
-		if(t.type != type) throw new Exception(errorMsg);
+		if(t == null) throw new ParserError(errorMsg);
+		if(t.type != type) throw new ParserError(errorMsg);
 		return t;
+	}
+	
+	private void popTokenNL(Deque<Token> tokens) {
+		while(tokens.peek().type == TokenType.NL) {
+			ParserError.lineNum++;
+			tokens.poll();
+		}
 	}
 	
 	private int evaluationLevel(TokenType type) throws Exception {
@@ -287,7 +304,7 @@ public class Parser {
 		case CALL:
 			return 3;
 		default:
-			throw new Exception("Bad token");
+			throw new ParserError("Bad token");
 		}
 	}
 	

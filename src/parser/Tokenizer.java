@@ -12,7 +12,37 @@ public class Tokenizer {
 		for(int i = 0; i < text.length(); i++) {
 			char ch = text.charAt(i);
 			// skip whitespace
-			if(ch == ' ' || ch == '\t' || ch == '\n' || ch =='\r') continue;
+			if(ch == ' ' || ch == '\t' || ch =='\r') continue;
+			if(ch == '\n') {
+				tokens.add(new Token(TokenType.NL));
+				continue;
+			}
+			
+			// skip comments
+			if(ch == '/') {
+				if(text.charAt(i+1) == '/') {
+					i += 2;
+					while(true) { 
+						if(text.charAt(i) == '\n') {
+							tokens.add(new Token(TokenType.NL));
+							break;
+						}
+						i++;
+					}
+				}
+				else if(text.charAt(i+1) == '*') {
+					i += 2;
+					while(true) {
+						if(text.charAt(i) == '*' && text.charAt(i+1) == '/') {
+							i++;
+							break;
+						}
+						if(text.charAt(i) == '\n') tokens.add(new Token(TokenType.NL));
+						i++;
+					}
+				}
+				continue;
+			}
 			
 			// do numbers first
 			if(Character.isDigit(ch))
