@@ -22,7 +22,11 @@ public class Token {
 		this.sym = sym;
 	}
 	
-	public boolean opEquals(Object e) {
+	public boolean equals(Object e) {
 		return ((Token) e).type == this.type;
+	}
+	
+	public static boolean isMathToken(TokenType type) {
+		return type == TokenType.PLUS || type == TokenType.MIN || type == TokenType.MUL || type == TokenType.DIV || type == TokenType.MOD;
 	}
 }

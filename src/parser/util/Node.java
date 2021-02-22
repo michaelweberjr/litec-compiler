@@ -35,7 +35,7 @@ public class Node<S> {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public boolean opEquals(Object e) {
+	public boolean equals(Object e) {
 		return ((Node<S>)e).val.equals(this.val);
 	}
 }

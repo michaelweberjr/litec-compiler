@@ -181,14 +181,14 @@ public class Parser {
 		fn.hasReturn = true;
 	}
 	
-	@SuppressWarnings("unlikely-arg-type")
 	private void parseMathExp(Deque<Token> tokens, FunctionTree fn, Node<Token> node) throws Exception {
 		Deque<Node<Token>> stack = new LinkedList<Node<Token>>();
 		Deque<Node<Token>> output = new LinkedList<Node<Token>>();
+		Node<Token> nodeTest = new Node<Token>(new Token(TokenType.LPAR));
 		
 		while(true) {
 			Token t = tokens.poll();
-			if(t.type == TokenType.SC || t.type == TokenType.COMMA || (t.type == TokenType.RPAR && !stack.contains(new Token(TokenType.LPAR)))) {
+			if(t.type == TokenType.SC || t.type == TokenType.COMMA || (t.type == TokenType.RPAR && !stack.contains(nodeTest))) {
 				tokens.addFirst(t);
 				break;
 			}
@@ -242,12 +242,11 @@ public class Parser {
 			else if(t.type == TokenType.RPAR) {
 				while(true) {
 					if(stack.isEmpty()) throw new Exception("Found unbalaced \')\'");
+					output.add(stack.pollLast());
 					if(stack.peekLast().val.type == TokenType.LPAR) {
-						stack.poll();
+						stack.pollLast();
 						break;
 					}
-					
-					output.add(stack.pop());
 				}
 			}
 			else {
@@ -255,7 +254,7 @@ public class Parser {
 					stack.add(new Node<Token>(t));
 				}
 				else {
-					while(evaluationLevel(t.type) <= evaluationLevel(stack.peekLast().val.type)) {
+					while(!stack.isEmpty() && evaluationLevel(t.type) <= evaluationLevel(stack.peekLast().val.type)) {
 						output.add(stack.pollLast());
 					}
 					stack.add(new Node<Token>(t));
@@ -264,12 +263,7 @@ public class Parser {
 		}
 		
 		while(!stack.isEmpty()) output.add(stack.pollLast());
-		
-		while(!output.isEmpty()) {
-			node.addChild(output.pollLast());
-			node = node.children.get(node.children.size()-1);
-			if(!output.isEmpty()) node.addChild(output.poll());
-		}
+		buildMathTree(output, node);
 	}
 	
 	private Token popToken(Deque<Token> tokens, TokenType type, String errorMsg) throws Exception {
@@ -281,6 +275,8 @@ public class Parser {
 	
 	private int evaluationLevel(TokenType type) throws Exception {
 		switch(type) {
+		case LPAR:
+			return 0;
 		case PLUS:
 		case MIN:
 			return 1;
@@ -292,6 +288,17 @@ public class Parser {
 			return 3;
 		default:
 			throw new Exception("Bad token");
+		}
+	}
+	
+	private void buildMathTree(Deque<Node<Token>> stack, Node<Token> node) throws Exception {
+		if(stack.isEmpty()) return;
+		
+		node.addChild(stack.pollLast());
+		node = node.children.get(node.children.size()-1);
+		if(Token.isMathToken(node.val.type)) {
+			buildMathTree(stack, node);
+			buildMathTree(stack, node);
 		}
 	}
 	

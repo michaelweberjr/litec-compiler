@@ -21,7 +21,7 @@ public class Optimizer {
 			if(child != null) {
 				solveLiterals(child);
 				
-				if(isMathToken(child.val.type)) {
+				if(Token.isMathToken(child.val.type)) {
 					if(child.children.get(0).val.type == TokenType.NUM && child.children.get(1).val.type == TokenType.NUM) {
 						switch(child.val.type) {
 						case PLUS:
@@ -46,9 +46,5 @@ public class Optimizer {
 				}
 			}
 		}
-	}
-
-	private static boolean isMathToken(TokenType type) {
-		return type == TokenType.PLUS || type == TokenType.MIN || type == TokenType.MUL || type == TokenType.DIV || type == TokenType.MOD;
 	}
 }

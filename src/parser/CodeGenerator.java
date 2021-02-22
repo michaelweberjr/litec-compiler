@@ -52,27 +52,29 @@ public class CodeGenerator {
 	private static void generateAssignment(FileWriter file, Node<Token> node) throws Exception {
 		if(node.children.get(1).val.type == TokenType.CALL) {
 			generateCall(file, node.children.get(1));
-			file.write("\tmov\t[rsp+" + (memoryWidth * node.children.get(0).val.val) + "], rax\n");
+			file.write("\tmov\tqword [rsp+" + (memoryWidth * node.children.get(0).val.val) + "], rax\n");
 		}
 		else if(node.children.get(1).val.type == TokenType.NUM) {
-			file.write("\tmov\t[rsp+" + (memoryWidth * node.children.get(0).val.val) + "], " + node.children.get(1).val.val + "\n");
+			file.write("\tmov\tqword [rsp+" + (memoryWidth * node.children.get(0).val.val) + "], " + node.children.get(1).val.val + "\n");
 		}
 		else if(node.children.get(1).val.type == TokenType.SYM) {
-			file.write("\tmov\t[rsp+" + (memoryWidth * node.children.get(0).val.val) + "], [rsp+" + (memoryWidth * node.children.get(1).val.val) + "]\n");
+			file.write("\tmov\tqword [rsp+" + (memoryWidth * node.children.get(0).val.val) + "], [rsp+" + (memoryWidth * node.children.get(1).val.val) + "]\n");
 		}
 		else { 
 			generateMath(file, node.children.get(1));
-			file.write("\tmov\t[rsp+" + (memoryWidth * node.children.get(0).val.val) + "], rbx\n");
+			file.write("\tmov\tqword [rsp+" + (memoryWidth * node.children.get(0).val.val) + "], rbx\n");
 		}
 	}
 	
 	private static void generateCall(FileWriter file, Node<Token> node) throws Exception {
 		for(int i = node.children.size() - 1; i > 0; i--) {
+			int stackOffset = node.children.size() - i - 1;
 			if(node.children.get(i).val.type == TokenType.NUM) {
-				file.write("\tpush\t" + node.children.get(i).val.val + "\n");
+				file.write("\tsub\trsp, 8\n");
+				file.write("\tmov\tqword [rsp], " + node.children.get(i).val.val + "\n");
 			}
 			else if(node.children.get(i).val.type == TokenType.SYM) {
-				file.write("\tpush\t[rsp+" + (memoryWidth * node.children.get(i).val.val) + "]\n");
+				file.write("\tpush\tqword [rsp+" + (memoryWidth * (node.children.get(i).val.val + stackOffset)) + "]\n");
 			}
 			else if(node.children.get(i).val.type == TokenType.CALL) {
 				generateCall(file, node.children.get(i));
@@ -99,7 +101,7 @@ public class CodeGenerator {
 	private static void generateMath(FileWriter file, Node<Token> node) throws Exception {
 		String src = "";
 		
-		if(node.children != null && node.children.size() >= 2) {
+		if(node.children != null && node.children.size() == 2) {
 			if(node.children.get(1).val.type == TokenType.NUM) {
 				file.write("\tmov\trbx, " + node.children.get(1).val.val + "\n");
 			}
@@ -117,14 +119,21 @@ public class CodeGenerator {
 			if(node.children.get(0).val.type == TokenType.CALL) {
 				file.write("\tpush\trbx\n");
 				generateCall(file, node);
-				file.write("\tpop\trbx");
+				file.write("\tpop\trbx\n");
 				src = "rax\n";			
 			}
 			else if(node.children.get(0).val.type == TokenType.NUM) {
 				src = node.children.get(0).val.val + "\n";
 			}
+			else if(node.children.get(0).val.type == TokenType.SYM) {
+				src = "qword [rsp+" + (node.children.get(0).val.val * memoryWidth) + "]\n";
+			}
 			else {
-				src = "[rsp+" + (node.children.get(0).val.val * memoryWidth) + "]\n";
+				file.write("\tmov\tr12, rbx\n");
+				generateMath(file, node.children.get(0));
+				file.write("\tmov\tr13, rbx\n");
+				file.write("\tmov\trbx, r12\n");
+				src = "r13\n";
 			}
 		}
 		
@@ -133,16 +142,25 @@ public class CodeGenerator {
 			file.write("\tadd\trbx, " + src);
 			break;
 		case MIN:
+			//file.write("\tmov r12, " + src);
 			file.write("\tsub\trbx, " + src);
 			break;
 		case MUL:
-			file.write("\tadd\trbx, " + src);
+			file.write("\tmov\trax,rbx\n");
+			file.write("\tpush\t" + src);
+			file.write("\timul\tqword [rsp]\n");
+			file.write("\tmov\trbx, rax\n");
+			file.write("\tadd\trsp, " + memoryWidth + "\n");
 			break;
 		case DIV:
-			file.write("\tadd\trbx, " + src);
-			break;
 		case MOD:
-			file.write("\tadd\trbx, " + src);
+			file.write("\tmov\trax,rbx\n");
+			file.write("\tpush\t" + src);
+			file.write("\txor\trdx, rdx\n");
+			file.write("\tdiv\tqword [rsp]\n");
+			if(node.val.type == TokenType.DIV) file.write("\tmov\trbx, rax\n");
+			else file.write("\tmov\trbx, rdx\n");
+			file.write("\tadd\trsp, " + memoryWidth + "\n");
 			break;
 		case CALL:
 			generateCall(file, node);
