@@ -12,6 +12,7 @@ int square(int x)
 int weirdFunction(int a, int b)
 {
 	int c = (2 + a) - (3 * b);
+	print(c);
 	return c + a;
 }
 

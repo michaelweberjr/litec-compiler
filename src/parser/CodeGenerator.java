@@ -39,10 +39,10 @@ public class CodeGenerator {
 	private static void generateStatement(FileWriter file, FunctionTree fn, Node<Token> node) throws Exception {
 		switch(node.val.type) {
 		case EQ:
-			generateAssignment(file, node);
+			generateAssignment(file, fn, node);
 			break;
 		case CALL:
-			generateCall(file, node);
+			generateCall(file, fn, node);
 			break;
 		case RET:
 			generateRet(file, fn, node);
@@ -52,39 +52,40 @@ public class CodeGenerator {
 		}
 	}
 
-	private static void generateAssignment(FileWriter file, Node<Token> node) throws Exception {
+	private static void generateAssignment(FileWriter file, FunctionTree fn, Node<Token> node) throws Exception {
 		if(node.children.get(1).val.type == TokenType.CALL) {
-			generateCall(file, node.children.get(1));
-			file.write("\tmov\tqword [rsp+" + (memoryWidth * node.children.get(0).val.val) + "], rax\n");
+			generateCall(file, fn, node.children.get(1));
+			file.write("\tmov\t" + getLocation(node.children.get(0).val, 0) + ", rax\n");
 		}
 		else if(node.children.get(1).val.type == TokenType.NUM) {
-			file.write("\tmov\tqword [rsp+" + (memoryWidth * node.children.get(0).val.val) + "], " + node.children.get(1).val.val + "\n");
+			file.write("\tmov\t" + getLocation(node.children.get(0).val, 0) + ", " + node.children.get(1).val.val + "\n");
 		}
 		else if(node.children.get(1).val.type == TokenType.SYM) {
-			file.write("\tmov\tqword [rsp+" + (memoryWidth * node.children.get(0).val.val) + "], [rsp+" + (memoryWidth * node.children.get(1).val.val) + "]\n");
+			file.write("\tmov\t" + getLocation(node.children.get(0).val, 0) + ", " + getLocation(node.children.get(1).val, 0) + "\n");
 		}
 		else { 
-			generateMath(file, node.children.get(1));
-			file.write("\tmov\tqword [rsp+" + (memoryWidth * node.children.get(0).val.val) + "], rbx\n");
+			generateMath(file, fn, node.children.get(1));
+			file.write("\tmov\t" + getLocation(node.children.get(0).val, 0) + ", rbx\n");
 		}
 	}
 	
-	private static void generateCall(FileWriter file, Node<Token> node) throws Exception {
+	private static void generateCall(FileWriter file, FunctionTree fn, Node<Token> node) throws Exception {
+		
 		for(int i = node.children.size() - 1; i > 0; i--) {
 			int stackOffset = node.children.size() - i - 1;
 			if(node.children.get(i).val.type == TokenType.NUM) {
 				file.write("\tsub\trsp, 8\n");
 				file.write("\tmov\tqword [rsp], " + node.children.get(i).val.val + "\n");
 			}
-			else if(node.children.get(i).val.type == TokenType.SYM) {
-				file.write("\tpush\tqword [rsp+" + (memoryWidth * (node.children.get(i).val.val + stackOffset)) + "]\n");
+			else if(node.children.get(i).val.type == TokenType.SYM) {		
+				file.write("\tpush\t" + getLocation(node.children.get(i).val, stackOffset) + "\n");
 			}
 			else if(node.children.get(i).val.type == TokenType.CALL) {
-				generateCall(file, node.children.get(i));
+				generateCall(file, fn, node.children.get(i));
 				file.write("\tpush\trax\n");
 			}
 			else {
-				generateMath(file, node.children.get(i));
+				generateMath(file, fn, node.children.get(i));
 				file.write("\tpush\trbx\n");
 			}
 		}
@@ -111,14 +112,14 @@ public class CodeGenerator {
 	
 	private static void generateRet(FileWriter file, FunctionTree fn, Node<Token> node) throws Exception {
 		if(node != null && node.children.size() > 0) {
-			generateMath(file, node.children.get(0));
+			generateMath(file, fn, node.children.get(0));
 			file.write("\tmov\trax, rbx\n");
 		}
 		file.write("\tadd\trsp, " + ((Registers.preserveRegisters.length + fn.frameVar.size()) * memoryWidth) + "\n");
 		file.write("\tret\n");
 	}
 	
-	private static void generateMath(FileWriter file, Node<Token> node) throws Exception {
+	private static void generateMath(FileWriter file, FunctionTree fn, Node<Token> node) throws Exception {
 		String src = "";
 		
 		if(node.children != null && node.children.size() == 2) {
@@ -126,19 +127,19 @@ public class CodeGenerator {
 				file.write("\tmov\trbx, " + node.children.get(1).val.val + "\n");
 			}
 			else if(node.children.get(1).val.type == TokenType.SYM) {
-				file.write("\tmov\trbx, [rsp+" + (node.children.get(1).val.val * memoryWidth) + "]\n");
+				file.write("\tmov\trbx, " + getLocation(node.children.get(1).val, 0) + "\n");
 			}
 			else if(node.children.get(1).val.type == TokenType.CALL) {
-				generateCall(file, node);
+				generateCall(file, fn, node);
 				file.write("\tmov\trbx, rax\n");
 			}
 			else {
-				generateMath(file, node.children.get(1));
+				generateMath(file, fn, node.children.get(1));
 			}
 			
 			if(node.children.get(0).val.type == TokenType.CALL) {
 				file.write("\tpush\trbx\n");
-				generateCall(file, node);
+				generateCall(file, fn, node);
 				file.write("\tpop\trbx\n");
 				src = "rax\n";			
 			}
@@ -146,11 +147,11 @@ public class CodeGenerator {
 				src = node.children.get(0).val.val + "\n";
 			}
 			else if(node.children.get(0).val.type == TokenType.SYM) {
-				src = "qword [rsp+" + (node.children.get(0).val.val * memoryWidth) + "]\n";
+				src = getLocation(node.children.get(0).val, 0) + "\n";
 			}
 			else {
 				file.write("\tmov\tr12, rbx\n");
-				generateMath(file, node.children.get(0));
+				generateMath(file, fn, node.children.get(0));
 				file.write("\tmov\tr13, rbx\n");
 				file.write("\tmov\trbx, r12\n");
 				src = "r13\n";
@@ -162,7 +163,6 @@ public class CodeGenerator {
 			file.write("\tadd\trbx, " + src);
 			break;
 		case MIN:
-			//file.write("\tmov r12, " + src);
 			file.write("\tsub\trbx, " + src);
 			break;
 		case MUL:
@@ -183,7 +183,7 @@ public class CodeGenerator {
 			file.write("\tadd\trsp, " + memoryWidth + "\n");
 			break;
 		case CALL:
-			generateCall(file, node);
+			generateCall(file, fn, node);
 			file.write("\tmov\trbx, rax\n");
 			break;
 		case NUM:
@@ -195,5 +195,14 @@ public class CodeGenerator {
 		default:
 			throw new Exception("Incorrect math operating in generateMath");
 		}
+	}
+	
+	private static String getLocation(Token t, int stackOffset) throws Exception {
+		if(t.val >= saveOffset) {
+			int offset = t.val - (saveOffset + Registers.preserveRegisters.length + 1);
+			if(offset >= 0 && offset < Registers.stackRegisters.length) return Registers.stackRegisters[offset];
+			else return "qword [rsp" + ((offset == 0 && stackOffset == 0) ? "]" : ("+" + ((stackOffset + offset) * memoryWidth) + "]"));
+		}
+		else return "qword [rsp" + ((t.val == 0 && stackOffset == 0) ? "]" : ("+" + (stackOffset * memoryWidth) + "]"));
 	}
 }
