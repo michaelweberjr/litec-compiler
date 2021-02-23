@@ -4,8 +4,12 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.LinkedList;
 
-import parser.defs.*;
-import parser.util.*;
+import common.defs.Registers;
+import common.defs.FunctionTree;
+import common.defs.Symbol;
+import common.defs.Token;
+import common.defs.TokenType;
+import common.util.Node;
 
 public class Parser {
 	public ArrayList<FunctionTree> program;
@@ -108,19 +112,19 @@ public class Parser {
 			for(int i = 0; i < fn.argsList.size(); i++) {
 				Symbol var = fn.argsList.get(i);
 				if(var.name.equals(tokens.peek().sym.name)) {
-					varOffset = fn.frameVar.size() + 1 + i;
+					varOffset = Registers.preserveRegisters.length + fn.frameVar.size() + 1 + i;
 					break;
 				}
 			}
 		
 		if(varOffset < 0) throw new ParserError("Undefined identifier: " + tokens.peek().sym.name);
 		
-		Node<Token> n = new Node<Token>(new Token(TokenType.EQ));
+		
+		Token var = tokens.poll();
+		Node<Token> n = new Node<Token>(popToken(tokens, TokenType.EQ, "Expected \'=\' after variable name"));
 		node.addChild(n);
-		Token t = tokens.poll();
-		t.val = varOffset;
-		n.addChild(t);
-		popToken(tokens, TokenType.EQ, "Expected \'=\' after variable name");
+		var.val = varOffset;
+		n.addChild(var);
 		parseMathExp(tokens, fn, n);
 	}
 	
@@ -193,6 +197,7 @@ public class Parser {
 		Deque<Node<Token>> stack = new LinkedList<Node<Token>>();
 		Deque<Node<Token>> output = new LinkedList<Node<Token>>();
 		Node<Token> nodeTest = new Node<Token>(new Token(TokenType.LPAR));
+		TokenType last = TokenType.ROOT;
 		
 		while(true) {
 			popTokenNL(tokens);
@@ -202,6 +207,12 @@ public class Parser {
 				break;
 			}
 			
+			if((t.type == TokenType.NUM || t.type == TokenType.SYM || t.type == TokenType.CALL) && (last == TokenType.NUM || last == TokenType.SYM || last == TokenType.CALL || last == TokenType.RPAR))
+				throw new ParserError("expected math operation after literal type");
+			if(Token.isMathToken(t.type) && Token.isMathToken(last))
+				throw new ParserError("expected literal after math operation");
+			last = t.type;
+			
 			if(t.type == TokenType.NUM) {
 				output.add(new Node<Token>(t));
 			}
@@ -210,7 +221,7 @@ public class Parser {
 				for(int i = 0; i < fn.argsList.size(); i++) {
 					Symbol s = fn.argsList.get(i);
 					if(s.name.equals(t.sym.name)) {
-						varOffset = fn.frameVar.size() + 1 + i;
+						varOffset = Registers.preserveRegisters.length + fn.frameVar.size() + 1 + i;
 						break;
 					}
 				}

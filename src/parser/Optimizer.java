@@ -2,10 +2,10 @@ package parser;
 
 import java.util.ArrayList;
 
-import parser.defs.FunctionTree;
-import parser.defs.Token;
-import parser.defs.TokenType;
-import parser.util.Node;
+import common.defs.FunctionTree;
+import common.defs.Token;
+import common.defs.TokenType;
+import common.util.Node;
 
 public class Optimizer {
 	public static void optimize(ArrayList<FunctionTree> program) {

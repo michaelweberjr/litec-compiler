@@ -1,4 +1,4 @@
-package parser.util;
+package common.util;
 
 public class Tree<S> {
 	public Node<S> root;

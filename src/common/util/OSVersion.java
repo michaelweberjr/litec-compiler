@@ -1,4 +1,4 @@
-package parser.util;
+package common.util;
 
 public class OSVersion {
     private static String OS = System.getProperty("os.name").toLowerCase();

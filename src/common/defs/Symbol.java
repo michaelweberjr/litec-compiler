@@ -1,4 +1,4 @@
-package parser.defs;
+package common.defs;
 
 public class Symbol {
 	public String name;

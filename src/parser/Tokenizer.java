@@ -2,7 +2,10 @@ package parser;
 
 import java.util.Deque;
 import java.util.LinkedList;
-import parser.defs.*;
+
+import common.defs.Symbol;
+import common.defs.Token;
+import common.defs.TokenType;
 
 public class Tokenizer {
 	public Deque<Token> tokens;
@@ -29,6 +32,7 @@ public class Tokenizer {
 						}
 						i++;
 					}
+					continue;
 				}
 				else if(text.charAt(i+1) == '*') {
 					i += 2;
@@ -40,8 +44,8 @@ public class Tokenizer {
 						if(text.charAt(i) == '\n') tokens.add(new Token(TokenType.NL));
 						i++;
 					}
+					continue;
 				}
-				continue;
 			}
 			
 			// do numbers first

@@ -2,11 +2,11 @@ package parser;
 
 import java.util.ArrayList;
 
-import parser.defs.FunctionTree;
-import parser.defs.Symbol;
-import parser.defs.Token;
-import parser.defs.TokenType;
-import parser.util.OSVersion;
+import common.defs.FunctionTree;
+import common.defs.Symbol;
+import common.defs.Token;
+import common.defs.TokenType;
+import common.util.OSVersion;
 
 public class BuiltInFunction {
 	
@@ -28,8 +28,8 @@ public class BuiltInFunction {
 				+"\tfmt:\tdb \"%d\", 10, 0\n\n"
 				+ "SECTION .TEXT\n\n"
 				+ "print:\n"
+				+ "\tmov\trdx,rcx\n"
 				+ "\tmov\trcx,fmt\n"
-				+ "\tmov\trdx,[rsp+8]\n"
 				+ "\tsub\trsp,40\n"
 				+ "\tcall\tprintf\n"
 				+ "\tadd\trsp,40\n"

@@ -3,13 +3,15 @@ package parser;
 import java.io.FileWriter;
 import java.util.ArrayList;
 
-import parser.defs.FunctionTree;
-import parser.defs.Token;
-import parser.defs.TokenType;
-import parser.util.Node;
+import common.defs.Registers;
+import common.defs.FunctionTree;
+import common.defs.Token;
+import common.defs.TokenType;
+import common.util.Node;
 
 public class CodeGenerator {
 	private static int memoryWidth = 8;
+	private static int saveOffset;
 	
 	public static void generate(FileWriter file, ArrayList<FunctionTree> program) throws Exception {	
 		file.write("global main\n\n");
@@ -21,7 +23,8 @@ public class CodeGenerator {
 			}
 			
 			file.write(fn.name.name + ":\n");
-			if(fn.frameVar.size() > 0) file.write("\tsub\trsp, " + (fn.frameVar.size() * memoryWidth) + "\n\n");
+			file.write("\tsub\trsp, " + ((fn.frameVar.size() + Registers.preserveRegisters.length) * memoryWidth) + "\n\n");
+			saveOffset = fn.frameVar.size();
 			
 			for(Node<Token> node : fn.statements.root.children) {
 				generateStatement(file, fn, node);
@@ -32,7 +35,7 @@ public class CodeGenerator {
 			file.write("\n");
 		}
 	}
-	
+
 	private static void generateStatement(FileWriter file, FunctionTree fn, Node<Token> node) throws Exception {
 		switch(node.val.type) {
 		case EQ:
@@ -85,8 +88,25 @@ public class CodeGenerator {
 				file.write("\tpush\trbx\n");
 			}
 		}
+		
+		for(int i = 0; i < Registers.preserveRegisters.length; i++) {
+			file.write("\tmov\tqword [rsp+" + ((saveOffset + (node.children.size() - 1) + i) * memoryWidth) 
+						+ "], " + Registers.preserveRegisters[i] + "\n");
+		}
+		
+		for(int i = 1; i < node.children.size(); i++) {
+			if(i <= Registers.stackRegisters.length) {
+				file.write("\tmov\t" + Registers.stackRegisters[i-1] + ", [rsp+" + ((i-1) * memoryWidth) + "]\n");
+			}
+			else break;
+		}
+		
 		file.write("\tcall\t" + node.children.get(0).val.sym.name + "\n");
 		file.write("\tadd\trsp, " + ((node.children.size() - 1) * memoryWidth) + "\n");
+		
+		for(int i = 0; i < Registers.preserveRegisters.length; i++) {
+			file.write("\tmov\t" + Registers.preserveRegisters[i] + ", [rsp+" + ((saveOffset + i) * memoryWidth) + "]\n");
+		}
 	}
 	
 	private static void generateRet(FileWriter file, FunctionTree fn, Node<Token> node) throws Exception {
@@ -94,7 +114,7 @@ public class CodeGenerator {
 			generateMath(file, node.children.get(0));
 			file.write("\tmov\trax, rbx\n");
 		}
-		if(fn.frameVar.size() > 0) file.write("\tadd\trsp, " + (fn.frameVar.size() * memoryWidth) + "\n");
+		file.write("\tadd\trsp, " + ((Registers.preserveRegisters.length + fn.frameVar.size()) * memoryWidth) + "\n");
 		file.write("\tret\n");
 	}
 	

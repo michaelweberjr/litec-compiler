@@ -1,4 +1,4 @@
-package parser.defs;
+package common.defs;
 
 public enum TokenType {
 	ROOT, CALL,	// parser tree types

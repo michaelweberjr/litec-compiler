@@ -1,8 +1,8 @@
-package parser.defs;
+package common.defs;
 
 import java.util.ArrayList;
 
-import parser.util.Tree;
+import common.util.Tree;
 
 public class FunctionTree {
 	public Tree<Token> statements;
