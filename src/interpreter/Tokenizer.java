@@ -91,7 +91,6 @@ public class Tokenizer {
 				case "pop":
 				case "imul":
 				case "div":
-				case "mod":
 					switch(t.sym.name) {
 					case "push":
 						code = new Instruction(OpCode.PUSH);
@@ -104,9 +103,6 @@ public class Tokenizer {
 						break;
 					case "div":
 						code = new Instruction(OpCode.DIV);
-						break;
-					case "MOD":
-						code = new Instruction(OpCode.MOD);
 						break;
 					}
 					

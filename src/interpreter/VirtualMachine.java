@@ -1,6 +1,5 @@
 package interpreter;
 
-import java.io.FileWriter;
 import java.util.ArrayList;
 
 import common.defs.*;
@@ -24,33 +23,6 @@ public class VirtualMachine {
 		codeSegment = Tokenizer.parseProgram(programText);
 		registers[RIP] = 0;
 		registers[RSP] = memorySize - 1;
-		
-		/*FileWriter file = new FileWriter("test.out");
-		for(Instruction i : codeSegment) {
-			file.write(i.code.toString());
-			switch(i.code) {
-			case ADD:
-			case MOV:
-			case SUB:
-			case XOR:
-				file.write(":\t" + i.dest.toString() + "," + i.dest_val +"," + i.dest_offset);
-				file.write("\t" + i.src.toString() + "," + i.src_val +"," + i.src_offset);
-				break;
-			case CALL:
-			case CALLB:
-			case DIV:
-			case IMUL:
-			case MOD:
-			case PUSH:
-			case POP:
-				file.write(": " + i.dest.toString() + "," + i.dest_val +"," + i.dest_offset);
-				break;
-			default:
-				break;
-			}
-			file.write("\n");
-		}
-		file.close();*/
 	}
 	
 	public void run() throws Exception {
@@ -71,7 +43,6 @@ public class VirtualMachine {
 			case CALLB:
 			case DIV:
 			case IMUL:
-			case MOD:
 			case PUSH:
 				if(i.dest == Location.IMED) arg1 = i.dest_val;
 				else if(i.dest == Location.REG) arg1 = registers[(int) i.dest_val];
@@ -98,17 +69,15 @@ public class VirtualMachine {
 				break;
 			case DIV:
 				temp = registers[RAX] / arg1;
+				long remain = registers[RAX] % arg1;
 				registers[RAX] = temp;
+				registers[RDX] = remain;
 				break;
 			case EXT:
 				return;
 			case IMUL:
 				temp = registers[RAX] * arg1;
 				registers[RAX] = temp;
-				break;
-			case MOD:
-				temp = registers[RAX] % arg1;
-				registers[RDX] = temp;
 				break;
 			case MOV:
 				if(i.dest == Location.REG) registers[(int) i.dest_val] = arg2;
