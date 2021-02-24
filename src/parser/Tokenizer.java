@@ -105,10 +105,10 @@ public class Tokenizer {
 				tokens.add(new Token(TokenType.RPAR));
 				break;
 			case '{':
-				tokens.add(new Token(TokenType.LBRA));
+				tokens.add(new Token(TokenType.LBRACE));
 				break;
 			case '}':
-				tokens.add(new Token(TokenType.RBRA));
+				tokens.add(new Token(TokenType.RBRACE));
 				break;
 			case '=':
 				tokens.add(new Token(TokenType.EQ));
@@ -151,10 +151,10 @@ public class Tokenizer {
 			case RPAR:
 				System.out.print("TOKEN_RPAR\n");
 				break;
-			case LBRA:
+			case LBRACE:
 				System.out.print("TOKEN_LBRA\n");
 				break;
-			case RBRA:
+			case RBRACE:
 				System.out.print("TOKEN_RBRA\n");
 				break;
 			case EQ:

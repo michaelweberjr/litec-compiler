@@ -54,14 +54,14 @@ public class Parser {
 			}
 			
 			popToken(tokens, TokenType.RPAR, "Missing \')\' in function defintion");
-			popToken(tokens, TokenType.LBRA, "Missing \'{\' in function defintion");
+			popToken(tokens, TokenType.LBRACE, "Missing \'{\' in function defintion");
 			
 			popTokenNL(tokens);
-			while(tokens.peek().type != TokenType.RBRA) {
+			while(tokens.peek().type != TokenType.RBRACE) {
 				parseStatement(tokens, fn, fn.statements.root);
 			}
 			
-			popToken(tokens, TokenType.RBRA, "Missing \'}\' in function defintion");
+			popToken(tokens, TokenType.RBRACE, "Missing \'}\' in function defintion");
 			
 			if(fn.returnType.type != TokenType.VOID && !fn.hasReturn) 
 				throw new ParserError("Missing return statement in function: " + fn.name.name);
@@ -74,7 +74,7 @@ public class Parser {
 	private void parseStatement(Deque<Token> tokens, FunctionTree fn, Node<Token> node) throws Exception {
 		popTokenNL(tokens);
 		Token t = tokens.peek();	
-		if(t.type == TokenType.RBRA || t.type == TokenType.SC) return;
+		if(t.type == TokenType.RBRACE || t.type == TokenType.SC) return;
 		
 		if(t.type == TokenType.INT) parseVariableDec(tokens, fn, node);
 		else if(t.type == TokenType.SYM) {
