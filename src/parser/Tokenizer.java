@@ -131,7 +131,11 @@ public class Tokenizer {
 				}
 				else if(text.charAt(i+1) == '<') {
 					i++;
-					tokens.add(new Token(TokenType.RSH));
+					if(text.charAt(i+1) == '=') {
+						i++;
+						tokens.add(new Token(TokenType.SHLEQ));
+					}
+					else tokens.add(new Token(TokenType.LSH));
 				}
 				else tokens.add(new Token(TokenType.LESS));
 				break;
@@ -142,7 +146,11 @@ public class Tokenizer {
 				}
 				else if(text.charAt(i+1) == '>') {
 					i++;
-					tokens.add(new Token(TokenType.LSH));
+					if(text.charAt(i+1) == '=') {
+						i++;
+						tokens.add(new Token(TokenType.SHREQ));
+					}
+					else tokens.add(new Token(TokenType.RSH));
 				}
 				else tokens.add(new Token(TokenType.GRT));
 				break;
@@ -151,6 +159,10 @@ public class Tokenizer {
 					i++;
 					tokens.add(new Token(TokenType.PP));
 				}
+				else if(text.charAt(i+1) == '=') {
+					i++;
+					tokens.add(new Token(TokenType.PLUSEQ));
+				}
 				else tokens.add(new Token(TokenType.PLUS));
 				break;
 			case '-':
@@ -158,16 +170,32 @@ public class Tokenizer {
 					i++;
 					tokens.add(new Token(TokenType.MM));
 				}
+				else if(text.charAt(i+1) == '=') {
+					i++;
+					tokens.add(new Token(TokenType.MINEQ));
+				}
 				else tokens.add(new Token(TokenType.MIN));
 				break;
 			case '*':
-				tokens.add(new Token(TokenType.MUL));
+				if(text.charAt(i+1) == '=') {
+					i++;
+					tokens.add(new Token(TokenType.MULEQ));
+				}
+				else tokens.add(new Token(TokenType.MUL));
 				break;
 			case '/':
-				tokens.add(new Token(TokenType.DIV));
+				if(text.charAt(i+1) == '=') {
+					i++;
+					tokens.add(new Token(TokenType.DIVEQ));
+				}
+				else tokens.add(new Token(TokenType.DIV));
 				break;
 			case '%':
-				tokens.add(new Token(TokenType.MOD));
+				if(text.charAt(i+1) == '=') {
+					i++;
+					tokens.add(new Token(TokenType.MODEQ));
+				}
+				else tokens.add(new Token(TokenType.MOD));
 				break;
 			case ';':
 				tokens.add(new Token(TokenType.SC));
@@ -180,6 +208,10 @@ public class Tokenizer {
 					i++;
 					tokens.add(new Token(TokenType.OR));
 				}
+				if(text.charAt(i+1) == '=') {
+					i++;
+					tokens.add(new Token(TokenType.OREQ));
+				}
 				else tokens.add(new Token(TokenType.BOR));
 				break;
 			case '&':
@@ -187,10 +219,18 @@ public class Tokenizer {
 					i++;
 					tokens.add(new Token(TokenType.AND));
 				}
+				if(text.charAt(i+1) == '=') {
+					i++;
+					tokens.add(new Token(TokenType.ANDEQ));
+				}
 				else tokens.add(new Token(TokenType.BAND));
 				break;
 			case '^':
-				tokens.add(new Token(TokenType.BXOR));
+				if(text.charAt(i+1) == '=') {
+					i++;
+					tokens.add(new Token(TokenType.XOREQ));
+				}
+				else tokens.add(new Token(TokenType.BXOR));
 				break;
 			case ',':
 				tokens.add(new Token(TokenType.COMMA));

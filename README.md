@@ -7,6 +7,7 @@ Currently supports:
 * Boolean operations: `&&`, `||`, `!`, `==`, `!=`, `>`, `>=`, `<`, `<=`
 * Bitwise operations: `~`, `&`, `|`, `^`
 * Pre/Post Inc/Decrement: `++`, `--` 
+* Op= operations: `+=`, `-=`, `*=`, `/=`, `%=`, `|=`, `&=`, `^=`, `<<=`, `>>=`
 * Built-in function for printing integers: print(int x)
 * Basic math operations: add, subtract, multiply, divide and modulus
 * Built-in function for printing integers: `print(int x);`

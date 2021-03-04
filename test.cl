@@ -19,7 +19,7 @@ int nestedFunction(int a, int b)
 void main()
 {
 	int x = 3 + 4;
-	x = x / 2;
+	x /= 2;
 	print(nestedFunction(x, square(x - 1)));
 	++x;
 	print(x);

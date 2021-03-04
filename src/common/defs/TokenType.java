@@ -10,6 +10,8 @@ public enum TokenType {
 	PP, MM, NEG,
 	NOT, BNOT, OR, BOR, AND, BAND, BXOR, // boolean operations
 	LSH, RSH,
+	PLUSEQ, MINEQ, MULEQ, DIVEQ, MODEQ,
+	ANDEQ, OREQ, XOREQ, SHLEQ, SHREQ,
 	VOID, INT, RET, // keywords
 	NL	// internal use
 }

@@ -38,10 +38,12 @@ public class CodeGenerator {
 	}
 
 	private static void generateStatement(FileWriter file, FunctionTree fn, Node<Token> node) throws Exception {
-		switch(node.val.type) {
-		case ASGN:
+		if(Token.isOpEq(node.val.type)) {
 			generateAssignment(file, fn, node);
-			break;
+			return;
+		}
+		
+		switch(node.val.type) {
 		case CALL:
 			generateCall(file, fn, node);
 			break;
@@ -58,27 +60,74 @@ public class CodeGenerator {
 	}
 
 	private static void generateAssignment(FileWriter file, FunctionTree fn, Node<Token> node) throws Exception {
+		String src = "";
+		String dest = getLocation(node.children.get(0).val, 0);
+		
 		if(node.children.get(1).val.type == TokenType.CALL) {
 			generateCall(file, fn, node.children.get(1));
-			file.write("\tmov\t" + getLocation(node.children.get(0).val, 0) + ", rax\n");
+			src = "rax\n";
 		}
 		else if(node.children.get(1).val.type == TokenType.NUM) {
-			file.write("\tmov\t" + getLocation(node.children.get(0).val, 0) + ", " + node.children.get(1).val.val + "\n");
+			src = node.children.get(1).val.val + "\n";
 		}
 		else if(node.children.get(1).val.type == TokenType.SYM) {
-			file.write("\tmov\t" + getLocation(node.children.get(0).val, 0) + ", " + getLocation(node.children.get(1).val, 0) + "\n");
+			src = getLocation(node.children.get(1).val, 0) + "\n";
 		}
 		else if(Token.isBoolToken(node.children.get(1).val.type)) {
 			generateBool(file, fn, node.children.get(1));
-			file.write("\tpush\trbx\n");
+			src = "rbx\n";
 		}
 		else if(Token.isCmpToken(node.children.get(1).val.type)) {
 			generateCmp(file, fn, node.children.get(1), null, null);
-			file.write("\tpush\trbx\n");
+			src = "rbx\n";
 		}
 		else { 
 			generateMath(file, fn, node.children.get(1));
-			file.write("\tmov\t" + getLocation(node.children.get(0).val, 0) + ", rbx\n");
+			src = "rbx\n";
+		}
+		
+		switch(node.val.type) {
+		case ASGN:
+			file.write("\tmov\t" + dest + ", " + src);
+			break;
+		case PLUSEQ:
+			file.write("\tmov\t" + dest + ", " + src);
+			break;
+		case MINEQ:
+			file.write("\tmov\t" + dest + ", " + src);
+			break;
+		case MULEQ:
+			file.write("\tmov\trax, " + dest + "\n");
+			file.write("\timul\t" + src);
+			file.write("\tmov\t" + dest + ", rax\n");
+			break;
+		case DIVEQ:
+			file.write("\tmov\trax, " + dest + "\n");
+			file.write("\tdiv\t" + src);
+			file.write("\tmov\t" + dest + ", rax\n");
+			break;
+		case MODEQ:
+			file.write("\tmov\trax, " + dest + "\n");
+			file.write("\tdiv\t" + src);
+			file.write("\tmov\t" + dest + ", rdx\n");
+			break;
+		case ANDEQ:
+			file.write("\tand\t" + dest + ", " + src);
+			break;
+		case OREQ:
+			file.write("\tor\t" + dest + ", " + src);
+			break;
+		case XOREQ:
+			file.write("\txor\t" + dest + ", " + src);
+			break;
+		case SHLEQ:
+			file.write("\tshl\t" + dest + ", " + src);
+			break;
+		case SHREQ:
+			file.write("\tshr\t" + dest + ", " + src);
+			break;
+		default:
+			throw new Exception("Bad token");
 		}
 	}
 	
@@ -392,20 +441,16 @@ public class CodeGenerator {
 			break;
 		case MUL:
 			file.write("\tmov\trax,rbx\n");
-			file.write("\tpush\t" + src);
-			file.write("\timul\tqword [rsp]\n");
+			file.write("\timul\t" + src);
 			file.write("\tmov\trbx, rax\n");
-			file.write("\tadd\trsp, " + memoryWidth + "\n");
 			break;
 		case DIV:
 		case MOD:
 			file.write("\tmov\trax,rbx\n");
-			file.write("\tpush\t" + src);
 			file.write("\txor\trdx, rdx\n");
-			file.write("\tdiv\tqword [rsp]\n");
+			file.write("\tdiv\t" + src);
 			if(node.val.type == TokenType.DIV) file.write("\tmov\trbx, rax\n");
 			else file.write("\tmov\trbx, rdx\n");
-			file.write("\tadd\trsp, " + memoryWidth + "\n");
 			break;
 		case BAND:
 			file.write("\tand\trbx, " + src);

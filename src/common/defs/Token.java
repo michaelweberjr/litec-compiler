@@ -178,4 +178,23 @@ public class Token {
 		if(type == TokenType.PP || type == TokenType.MM) return true;
 		return false;
 	}
+	
+	public static boolean isOpEq(TokenType type) {
+		switch(type) {
+		case ASGN:
+		case PLUSEQ:
+		case MINEQ:
+		case MULEQ:
+		case DIVEQ:
+		case MODEQ:
+		case ANDEQ:
+		case OREQ:
+		case XOREQ:
+		case SHLEQ:
+		case SHREQ:
+			return true;
+		default:
+			return false;
+		}
+	}
 }
