@@ -26,6 +26,7 @@ public class Tokenizer {
 		HashMap<String, Pair<Integer, ArrayList<Integer>>> labelList = new HashMap<>();
 		HashMap<String, Integer> registers = new HashMap<>();
 		for(int i = 0; i < Registers.list.length; i++) registers.put(Registers.list[i], i);
+		for(int i = 0; i < Registers.lower.length; i++) registers.put(Registers.lower[i], i);
 		
 		while(!tokens.isEmpty()) {
 			Token t = tokens.pollFirst();
@@ -57,8 +58,15 @@ public class Tokenizer {
 				case "ret":
 					byteCode.add(new Instruction(OpCode.RET));
 					break;
-				// special single arg op
+				// jumping opcodes
 				case "call":
+				case "jmp":
+				case "je":
+				case "jne":
+				case "jl":
+				case "jle":
+				case "jg":
+				case "jge":
 					Token fn = tokens.pollFirst();
 					if(fn == null || fn.type != TokenType.SYM) throw new Exception("Missing function name");
 					
@@ -68,7 +76,7 @@ public class Tokenizer {
 						code.dest_val = getBuiltIn(fn.sym.name);
 					}
 					else {
-						code = new Instruction(OpCode.CALL);
+						code = new Instruction(textToCode(t.sym.name));
 						code.dest = Location.IMED;
 						if(labelList.containsKey(fn.sym.name)) {
 							Pair<Integer, ArrayList<Integer>> address = labelList.get(fn.sym.name);
@@ -91,6 +99,10 @@ public class Tokenizer {
 				case "pop":
 				case "imul":
 				case "div":
+				case "inc":
+				case "dec":
+				case "neg":
+				case "not":
 					switch(t.sym.name) {
 					case "push":
 						code = new Instruction(OpCode.PUSH);
@@ -103,6 +115,18 @@ public class Tokenizer {
 						break;
 					case "div":
 						code = new Instruction(OpCode.DIV);
+						break;
+					case "inc":
+						code = new Instruction(OpCode.INC);
+						break;
+					case "dec":
+						code = new Instruction(OpCode.DEC);
+						break;
+					case "neg":
+						code = new Instruction(OpCode.NEG);
+						break;
+					case "not":
+						code = new Instruction(OpCode.NOT);
 						break;
 					}
 					
@@ -152,6 +176,11 @@ public class Tokenizer {
 			case "add":
 			case "sub":
 			case "xor":
+			case "or":
+			case "and":
+			case "shl":
+			case "shr":
+			case "cmp":
 				switch(t.sym.name) {
 					case "mov":
 						code = new Instruction(OpCode.MOV);
@@ -164,6 +193,21 @@ public class Tokenizer {
 						break;
 					case "xor":
 						code = new Instruction(OpCode.XOR);
+						break;
+					case "or":
+						code = new Instruction(OpCode.OR);
+						break;
+					case "and":
+						code = new Instruction(OpCode.AND);
+						break;
+					case "shl":
+						code = new Instruction(OpCode.SHL);
+						break;
+					case "shr":
+						code = new Instruction(OpCode.SHR);
+						break;
+					case "cmp":
+						code = new Instruction(OpCode.CMP);
 						break;
 					}
 					
@@ -354,5 +398,28 @@ public class Tokenizer {
 				return i;
 		
 		return -1;
+	}
+	
+	static OpCode textToCode(String text) {
+		switch(text) {
+		case "call":
+			return OpCode.CALL;
+		case "jmp":
+			return OpCode.JMP;
+		case "je":
+			return OpCode.JE;
+		case "jne":
+			return OpCode.JNE;
+		case "jl":
+			return OpCode.JL;
+		case "jle":
+			return OpCode.JLE;
+		case "jg":
+			return OpCode.JG;
+		case "jge":
+			return OpCode.JGE;
+		default:
+			return OpCode.NOP;
+		}
 	}
 }

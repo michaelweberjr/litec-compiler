@@ -9,10 +9,10 @@ int square(int x)
 	return x*x;
 }
 
-int weirdFunction(int a, int b)
+int nestedFunction(int a, int b)
 {
-	int c = (2 + a) - (3 * b);
-	print(c);
+	int c = square(7 & 3);
+	print(c >= a++);
 	return c + a;
 }
 
@@ -20,5 +20,7 @@ void main()
 {
 	int x = 3 + 4;
 	x = x / 2;
-	print(weirdFunction(x, square(x - 1)));
+	print(nestedFunction(x, square(x - 1)));
+	++x;
+	print(x);
 }

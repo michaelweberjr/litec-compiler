@@ -11,6 +11,7 @@ public class VirtualMachine {
 	private long[] registers = new long[Registers.list.length];
 	private ArrayList<Instruction> codeSegment;
 	private long[] dataSegment;
+	private CPUFlags flags;
 	
 	private final int RIP = 0;
 	private final int RAX = 1;
@@ -36,6 +37,11 @@ public class VirtualMachine {
 			case MOV:
 			case SUB:
 			case XOR:
+			case OR:
+			case AND:
+			case SHL:
+			case SHR:
+			case CMP:
 				if(i.src == Location.IMED) arg2 = i.src_val;
 				else if(i.src == Location.REG) arg2 = registers[(int) i.src_val];
 				else arg2 = dataSegment[(int) registers[(int) i.src_val] + i.src_offset];
@@ -44,6 +50,15 @@ public class VirtualMachine {
 			case DIV:
 			case IMUL:
 			case PUSH:
+			case NEG:
+			case NOT:
+			case JMP:
+			case JE:
+			case JNE:
+			case JL:
+			case JLE:
+			case JG:
+			case JGE:
 				if(i.dest == Location.IMED) arg1 = i.dest_val;
 				else if(i.dest == Location.REG) arg1 = registers[(int) i.dest_val];
 				else arg1 = dataSegment[(int) registers[(int) i.dest_val] + i.dest_offset];
@@ -62,6 +77,7 @@ public class VirtualMachine {
 			case CALL:
 				registers[RSP] -= 8;
 				dataSegment[(int) registers[RSP]] = registers[RIP] + 1;
+			case JMP:
 				registers[RIP] = arg1;
 				continue;
 			case CALLB:
@@ -109,6 +125,66 @@ public class VirtualMachine {
 				if(i.dest == Location.REG) registers[(int) i.dest_val] = temp;
 				else dataSegment[(int) registers[(int) (i.dest_val)] + i.dest_offset] = temp;
 				break;
+			case OR:
+				temp = arg1 | arg2;
+				if(i.dest == Location.REG) registers[(int) i.dest_val] = temp;
+				else dataSegment[(int) registers[(int) (i.dest_val)] + i.dest_offset] = temp;
+				break;
+			case AND:
+				temp = arg1 & arg2;
+				if(i.dest == Location.REG) registers[(int) i.dest_val] = temp;
+				else dataSegment[(int) registers[(int) (i.dest_val)] + i.dest_offset] = temp;
+				break;
+			case SHL:
+				temp = arg1 << arg2;
+				if(i.dest == Location.REG) registers[(int) i.dest_val] = temp;
+				else dataSegment[(int) registers[(int) (i.dest_val)] + i.dest_offset] = temp;
+				break;
+			case SHR:
+				temp = arg1 >> arg2;
+				if(i.dest == Location.REG) registers[(int) i.dest_val] = temp;
+				else dataSegment[(int) registers[(int) (i.dest_val)] + i.dest_offset] = temp;
+				break;
+			case INC:
+				if(i.dest == Location.REG) registers[(int) i.dest_val]++;
+				else dataSegment[(int) registers[(int) (i.dest_val)] + i.dest_offset]++;
+				break;
+			case DEC:
+				if(i.dest == Location.REG) registers[(int) i.dest_val]--;
+				else dataSegment[(int) registers[(int) (i.dest_val)] + i.dest_offset]--;
+				break;
+			case NEG:
+				if(i.dest == Location.REG) registers[(int) i.dest_val] = -arg1;
+				else dataSegment[(int) registers[(int) (i.dest_val)] + i.dest_offset] = -arg1;
+				break;
+			case NOT:
+				if(i.dest == Location.REG) registers[(int) i.dest_val] = ~arg1;
+				else dataSegment[(int) registers[(int) (i.dest_val)] + i.dest_offset] = ~arg1;
+				break;
+			case CMP:
+				temp = arg1 - arg2;
+				if(temp == 0) flags = CPUFlags.ZERO;
+				else if(temp < 0) flags = CPUFlags.NEG;
+				else flags = CPUFlags.POS;
+				break;
+			case JE:
+				if(flags == CPUFlags.ZERO) registers[RIP] = arg1;
+				continue;
+			case JNE:
+				if(flags != CPUFlags.ZERO) registers[RIP] = arg1;
+				continue;
+			case JL:
+				if(flags == CPUFlags.NEG) registers[RIP] = arg1;
+				continue;
+			case JLE:
+				if(flags == CPUFlags.ZERO || flags == CPUFlags.NEG) registers[RIP] = arg1;
+				continue;
+			case JG:
+				if(flags == CPUFlags.POS) registers[RIP] = arg1;
+				continue;
+			case JGE:
+				if(flags == CPUFlags.ZERO || flags == CPUFlags.POS) registers[RIP] = arg1;
+				continue;
 			default:
 				throw new Exception("Virtual MAchine code error: " + codeSegment.get((int) registers[0]).code);
 			}

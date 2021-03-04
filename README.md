@@ -3,7 +3,10 @@ A compiler/interpreter for a small subset of C written in Java. The compiler pro
 Currently supports:
 * 'int' data type is a 64bit signed integer
 * Functions and function nesting (no recursion)
-* Basic math operations: add, subtract, multiply, divide and modulus
+* Standard math operations: `+`, `-`, `*`, `/`, `*`
+* Boolean operations: '&&', '||', `!`, '==', '!=', '>', '>=', '<', '<='
+* Bitwise operations: '~', '&', '|', '^'
+* Pre/Post Inc/Decrement: '++', '--' 
 * Built-in function for printing integers: print(int x)
 For an example see test.cl in the root folder
 
@@ -34,9 +37,25 @@ push
 pop
 call
 ret
+neg
 add
 sub
 imul
 div
+inc
+dec
+not
+and
+or
 xor
+shl
+shr
+cmp
+jmp
+je
+jne
+jl
+jle
+jg
+jge
 '''

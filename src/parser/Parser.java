@@ -89,7 +89,20 @@ public class Parser {
 			}
 			
 			if(isFn) parseFunctionCall(tokens, fn, callee, node);
-			else parseAssignment(tokens, fn, node);
+			else {
+				Token save = tokens.poll();
+				if(tokens.peek().type == TokenType.PP || tokens.peek().type == TokenType.MM) {
+					tokens.addFirst(save);
+					parseIncDec(tokens, fn, node);
+				}
+				else {
+					tokens.addFirst(save);
+					parseAssignment(tokens, fn, node);
+				}
+			}
+		}
+		else if(t.type == TokenType.PP || t.type == TokenType.MM) {
+			parseIncDec(tokens, fn, node);
 		}
 		else if(t.type == TokenType.RET) {
 			parseReturn(tokens, fn, node);
@@ -97,7 +110,7 @@ public class Parser {
 		
 		popToken(tokens, TokenType.SC, "Expected \';\' at end of statement");
 	}
-	
+
 	private void parseAssignment(Deque<Token> tokens, FunctionTree fn, Node<Token> node) throws Exception {
 		int varOffset = -1;
 		for(int i = 0; i < fn.frameVar.size(); i++) {
@@ -121,7 +134,7 @@ public class Parser {
 		
 		
 		Token var = tokens.poll();
-		Node<Token> n = new Node<Token>(popToken(tokens, TokenType.EQ, "Expected \'=\' after variable name"));
+		Node<Token> n = new Node<Token>(popToken(tokens, TokenType.ASGN, "Expected \'=\' after variable name"));
 		node.addChild(n);
 		var.val = varOffset;
 		n.addChild(var);
@@ -154,7 +167,7 @@ public class Parser {
 		
 		Token t = tokens.poll();
 		popTokenNL(tokens);
-		if(tokens.peek().type == TokenType.EQ) {
+		if(tokens.peek().type == TokenType.ASGN) {
 			tokens.addFirst(t);
 			parseAssignment(tokens, fn, node);
 		}
@@ -193,6 +206,43 @@ public class Parser {
 		fn.hasReturn = true;
 	}
 	
+	private void parseIncDec(Deque<Token> tokens, FunctionTree fn, Node<Token> node) throws Exception {
+		Node<Token> var;
+		Node<Token> math;
+		if(tokens.peek().type == TokenType.PP || tokens.peek().type == TokenType.MM) {
+			math = new Node<>(tokens.poll());
+			var = new Node<>(tokens.poll());
+		}
+		else {
+			var = new Node<>(tokens.poll());
+			math = new Node<>(tokens.poll());
+			math.addChild(new Node<Token>(new Token(TokenType.NL)));
+		}
+		math.addChild(var);
+		
+		node.addChild(math);
+		int varOffset = -1;
+		for(int i = 0; i < fn.argsList.size(); i++) {
+			Symbol s = fn.argsList.get(i);
+			if(s.name.equals(var.val.sym.name)) {
+				varOffset = Registers.preserveRegisters.length + fn.frameVar.size() + 1 + i;
+				break;
+			}
+		}
+		
+		if(varOffset < 0)
+			for(int i = 0; i < fn.frameVar.size(); i++) {
+				Symbol s = fn.frameVar.get(i);
+				if(s.name.equals(var.val.sym.name)) {
+					varOffset = i;
+					break;
+				}
+			}
+		
+		if(varOffset < 0) throw new ParserError("Unkown symbol: " + var.val.sym.name);
+		var.val.val = varOffset;
+	}
+	
 	private void parseMathExp(Deque<Token> tokens, FunctionTree fn, Node<Token> node) throws Exception {
 		Deque<Node<Token>> stack = new LinkedList<Node<Token>>();
 		Deque<Node<Token>> output = new LinkedList<Node<Token>>();
@@ -207,11 +257,12 @@ public class Parser {
 				break;
 			}
 			
+			if(t.type == TokenType.MIN && (last == TokenType.NUM || last == TokenType.SYM || last == TokenType.CALL || last == TokenType.RPAR || last == TokenType.ROOT)) t.type = TokenType.NEG;
 			if((t.type == TokenType.NUM || t.type == TokenType.SYM || t.type == TokenType.CALL) && (last == TokenType.NUM || last == TokenType.SYM || last == TokenType.CALL || last == TokenType.RPAR))
 				throw new ParserError("expected math operation after literal type");
-			if(Token.isMathToken(t.type) && Token.isMathToken(last))
+			if(Token.isMathToken(t.type) && Token.isMathToken(last) && Token.mathArgCount(t.type) > 1)
 				throw new ParserError("expected literal after math operation");
-			last = t.type;
+			last = Token.mathArgCount(t.type) == 1 ? TokenType.NUM : t.type;
 			
 			if(t.type == TokenType.NUM) {
 				output.add(new Node<Token>(t));
@@ -236,8 +287,16 @@ public class Parser {
 					}
 				
 				if(varOffset >= 0) {
-					t.val = varOffset;
-					output.add(new Node<Token>(t));
+					if(tokens.peek().type == TokenType.PP || tokens.peek().type == TokenType.MM) {
+						Node<Token> n =  new Node<Token>(new Token(TokenType.ROOT));
+						tokens.addFirst(t);
+						parseIncDec(tokens, fn, n);
+						output.add(n.children.get(0));
+					} 
+					else {
+						t.val = varOffset;
+						output.add(new Node<Token>(t));
+					}
 					continue;
 				}
 				
@@ -256,6 +315,17 @@ public class Parser {
 				parseFunctionCall(tokens, fn, callee, n);
 				output.add(n.children.get(0));
 			}
+			else if(t.type == TokenType.PP || t.type == TokenType.MM) {
+				tokens.addFirst(t);
+				Node<Token> n = new Node<>(new Token(TokenType.ROOT));
+				parseIncDec(tokens, fn, n);
+			}
+			else if(Token.mathArgCount(t.type) == 1) {
+				Node<Token> n = new Node<Token>(new Token(t.type));
+				popTokenNL(tokens);
+				tokens.poll();
+				parseMathExp(tokens, fn, n);
+			}
 			else if(t.type == TokenType.LPAR) {
 				stack.add(new Node<Token>(t));
 			}
@@ -270,11 +340,11 @@ public class Parser {
 				}
 			}
 			else {
-				if(stack.isEmpty() || evaluationLevel(t.type) > evaluationLevel(stack.peekLast().val.type)) {
+				if(stack.isEmpty() || Token.evaluationLevel(t.type) > Token.evaluationLevel(stack.peekLast().val.type)) {
 					stack.add(new Node<Token>(t));
 				}
 				else {
-					while(!stack.isEmpty() && evaluationLevel(t.type) <= evaluationLevel(stack.peekLast().val.type)) {
+					while(!stack.isEmpty() && Token.evaluationLevel(t.type) <= Token.evaluationLevel(stack.peekLast().val.type)) {
 						output.add(stack.pollLast());
 					}
 					stack.add(new Node<Token>(t));
@@ -298,24 +368,6 @@ public class Parser {
 		while(tokens.peek().type == TokenType.NL) {
 			ParserError.lineNum++;
 			tokens.poll();
-		}
-	}
-	
-	private int evaluationLevel(TokenType type) throws Exception {
-		switch(type) {
-		case LPAR:
-			return 0;
-		case PLUS:
-		case MIN:
-			return 1;
-		case MUL:
-		case DIV:
-		case MOD:
-			return 2;
-		case CALL:
-			return 3;
-		default:
-			throw new ParserError("Bad token");
 		}
 	}
 	

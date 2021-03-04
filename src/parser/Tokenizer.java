@@ -111,13 +111,54 @@ public class Tokenizer {
 				tokens.add(new Token(TokenType.RBRACE));
 				break;
 			case '=':
-				tokens.add(new Token(TokenType.EQ));
+				if(text.charAt(i+1) == '=') {
+					i++;
+					tokens.add(new Token(TokenType.EQ));
+				}
+				else tokens.add(new Token(TokenType.ASGN));
+				break;
+			case '!':
+				if(text.charAt(i+1) == '=') {
+					i++;
+					tokens.add(new Token(TokenType.NE));
+				}
+				else tokens.add(new Token(TokenType.NOT));
+				break;
+			case '<':
+				if(text.charAt(i+1) == '=') {
+					i++;
+					tokens.add(new Token(TokenType.LE));
+				}
+				else if(text.charAt(i+1) == '<') {
+					i++;
+					tokens.add(new Token(TokenType.RSH));
+				}
+				else tokens.add(new Token(TokenType.LESS));
+				break;
+			case '>':
+				if(text.charAt(i+1) == '=') {
+					i++;
+					tokens.add(new Token(TokenType.GE));
+				}
+				else if(text.charAt(i+1) == '>') {
+					i++;
+					tokens.add(new Token(TokenType.LSH));
+				}
+				else tokens.add(new Token(TokenType.GRT));
 				break;
 			case '+':
-				tokens.add(new Token(TokenType.PLUS));
+				if(text.charAt(i+1) == '+') {
+					i++;
+					tokens.add(new Token(TokenType.PP));
+				}
+				else tokens.add(new Token(TokenType.PLUS));
 				break;
 			case '-':
-				tokens.add(new Token(TokenType.MIN));
+				if(text.charAt(i+1) == '-') {
+					i++;
+					tokens.add(new Token(TokenType.MM));
+				}
+				else tokens.add(new Token(TokenType.MIN));
 				break;
 			case '*':
 				tokens.add(new Token(TokenType.MUL));
@@ -131,6 +172,26 @@ public class Tokenizer {
 			case ';':
 				tokens.add(new Token(TokenType.SC));
 				break;
+			case '~':
+				tokens.add(new Token(TokenType.BNOT));
+				break;
+			case '|':
+				if(text.charAt(i+1) == '|') {
+					i++;
+					tokens.add(new Token(TokenType.OR));
+				}
+				else tokens.add(new Token(TokenType.BOR));
+				break;
+			case '&':
+				if(text.charAt(i+1) == '&') {
+					i++;
+					tokens.add(new Token(TokenType.AND));
+				}
+				else tokens.add(new Token(TokenType.BAND));
+				break;
+			case '^':
+				tokens.add(new Token(TokenType.BXOR));
+				break;
 			case ',':
 				tokens.add(new Token(TokenType.COMMA));
 				break;
@@ -138,7 +199,7 @@ public class Tokenizer {
 				throw new Exception("Unknown token: " + text.charAt(i));
 			}
 		}
-	}
+	}	
 	
 	public void printTokens() {
 		for(Token token : tokens)

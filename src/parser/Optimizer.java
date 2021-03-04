@@ -21,7 +21,7 @@ public class Optimizer {
 			if(child != null) {
 				solveLiterals(child);
 				
-				if(Token.isMathToken(child.val.type)) {
+				if(Token.isMathToken(child.val.type) && Token.mathArgCount(child.val.type) > 1) {
 					if(child.children.get(0).val.type == TokenType.NUM && child.children.get(1).val.type == TokenType.NUM) {
 						switch(child.val.type) {
 						case PLUS:
