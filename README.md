@@ -4,11 +4,10 @@ Currently supports:
 * 'int' data type is a 64bit signed integer
 * Functions and function nesting (no recursion)
 * Standard math operations: `+`, `-`, `*`, `/`, `*`
-* Boolean operations: '&&', '||', `!`, '==', '!=', '>', '>=', '<', '<='
-* Bitwise operations: '~', '&', '|', '^'
-* Pre/Post Inc/Decrement: '++', '--' 
+* Boolean operations: `&&`, `||`, `!`, `==`, `!=`, `>`, `>=`, `<`, `<=`
+* Bitwise operations: `~`, `&`, `|`, `^`
+* Pre/Post Inc/Decrement: `++`, `--` 
 * Built-in function for printing integers: print(int x)
-=======
 * Basic math operations: add, subtract, multiply, divide and modulus
 * Built-in function for printing integers: `print(int x);`
 For an example see test.cl in the root folder
@@ -61,6 +60,4 @@ jl
 jle
 jg
 jge
-'''
-=======
 ```
