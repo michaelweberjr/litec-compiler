@@ -134,7 +134,9 @@ public class Parser {
 		
 		
 		Token var = tokens.poll();
-		Node<Token> n = new Node<Token>(popToken(tokens, TokenType.ASGN, "Expected \'=\' after variable name"));
+		popTokenNL(tokens);
+		if(!Token.isOpEq(tokens.peek().type)) throw new ParserError("Expected \'=\' after variable name");
+		Node<Token> n = new Node<Token>(tokens.poll());
 		node.addChild(n);
 		var.val = varOffset;
 		n.addChild(var);
@@ -167,7 +169,7 @@ public class Parser {
 		
 		Token t = tokens.poll();
 		popTokenNL(tokens);
-		if(tokens.peek().type == TokenType.ASGN) {
+		if(Token.isOpEq(tokens.peek().type)) {
 			tokens.addFirst(t);
 			parseAssignment(tokens, fn, node);
 		}
