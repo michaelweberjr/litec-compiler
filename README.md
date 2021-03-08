@@ -1,11 +1,11 @@
 # Lite C Compiler/Interpreter
 A compiler/interpreter for a small subset of C written in Java. The compiler produces x64 assembly as the intermediate bytecode.
 Currently supports:
-* 'int' data type is a 64bit signed integer
+* `int` data type is a 64bit signed integer
 * Functions and function nesting (no recursion)
-* Standard math operations: `+`, `-`, `*`, `/`, `*`
+* Standard math operations: `+`, `-`, `*`, `/`, `%`
 * Boolean operations: `&&`, `||`, `!`, `==`, `!=`, `>`, `>=`, `<`, `<=`
-* Bitwise operations: `~`, `&`, `|`, `^`
+* Bitwise operations: `~`, `&`, `|`, `^`, `<<`, `<<`
 * Pre/Post Inc/Decrement: `++`, `--` 
 * Op= operations: `+=`, `-=`, `*=`, `/=`, `%=`, `|=`, `&=`, `^=`, `<<=`, `>>=`
 * Built-in function for printing integers: print(int x)

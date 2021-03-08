@@ -5,7 +5,7 @@ import java.util.ArrayList;
 
 import common.defs.Registers;
 import common.defs.FunctionTree;
-import common.defs.Token;
+import common.defs.Tokens;
 import common.defs.TokenType;
 import common.util.Node;
 
@@ -27,7 +27,7 @@ public class CodeGenerator {
 			file.write("\tsub\trsp, " + ((fn.frameVar.size() + Registers.preserveRegisters.length) * memoryWidth) + "\n\n");
 			saveOffset = fn.frameVar.size();
 			
-			for(Node<Token> node : fn.statements.root.children) {
+			for(Node<Tokens> node : fn.statements.root.children) {
 				generateStatement(file, fn, node);
 				file.write("\n");
 			}
@@ -37,8 +37,8 @@ public class CodeGenerator {
 		}
 	}
 
-	private static void generateStatement(FileWriter file, FunctionTree fn, Node<Token> node) throws Exception {
-		if(Token.isOpEq(node.val.type)) {
+	private static void generateStatement(FileWriter file, FunctionTree fn, Node<Tokens> node) throws Exception {
+		if(Tokens.isOpEq(node.val.type)) {
 			generateAssignment(file, fn, node);
 			return;
 		}
@@ -59,7 +59,7 @@ public class CodeGenerator {
 		}
 	}
 
-	private static void generateAssignment(FileWriter file, FunctionTree fn, Node<Token> node) throws Exception {
+	private static void generateAssignment(FileWriter file, FunctionTree fn, Node<Tokens> node) throws Exception {
 		String src = "";
 		String dest = getLocation(node.children.get(0).val, 0);
 		
@@ -73,11 +73,11 @@ public class CodeGenerator {
 		else if(node.children.get(1).val.type == TokenType.SYM) {
 			src = getLocation(node.children.get(1).val, 0) + "\n";
 		}
-		else if(Token.isBoolToken(node.children.get(1).val.type)) {
+		else if(Tokens.isBoolToken(node.children.get(1).val.type)) {
 			generateBool(file, fn, node.children.get(1));
 			src = "rbx\n";
 		}
-		else if(Token.isCmpToken(node.children.get(1).val.type)) {
+		else if(Tokens.isCmpToken(node.children.get(1).val.type)) {
 			generateCmp(file, fn, node.children.get(1), null, null);
 			src = "rbx\n";
 		}
@@ -131,7 +131,7 @@ public class CodeGenerator {
 		}
 	}
 	
-	private static void generateCall(FileWriter file, FunctionTree fn, Node<Token> node) throws Exception {
+	private static void generateCall(FileWriter file, FunctionTree fn, Node<Tokens> node) throws Exception {
 		
 		for(int i = node.children.size() - 1; i > 0; i--) {
 			int stackOffset = node.children.size() - i - 1;
@@ -146,11 +146,11 @@ public class CodeGenerator {
 				generateCall(file, fn, node.children.get(i));
 				file.write("\tpush\trax\n");
 			}
-			else if(Token.isBoolToken(node.children.get(i).val.type)) {
+			else if(Tokens.isBoolToken(node.children.get(i).val.type)) {
 				generateBool(file, fn, node.children.get(i));
 				file.write("\tpush\trbx\n");
 			}
-			else if(Token.isCmpToken(node.children.get(i).val.type)) {
+			else if(Tokens.isCmpToken(node.children.get(i).val.type)) {
 				generateCmp(file, fn, node.children.get(i), null, null);
 				file.write("\tpush\trbx\n");
 			}
@@ -180,7 +180,7 @@ public class CodeGenerator {
 		}
 	}
 	
-	private static void generateRet(FileWriter file, FunctionTree fn, Node<Token> node) throws Exception {
+	private static void generateRet(FileWriter file, FunctionTree fn, Node<Tokens> node) throws Exception {
 		if(node != null && node.children.size() > 0) {
 			generateMath(file, fn, node.children.get(0));
 			file.write("\tmov\trax, rbx\n");
@@ -189,14 +189,14 @@ public class CodeGenerator {
 		file.write("\tret\n");
 	}
 	
-	private static void generateBool(FileWriter file, FunctionTree fn, Node<Token> node) throws Exception {	
+	private static void generateBool(FileWriter file, FunctionTree fn, Node<Tokens> node) throws Exception {	
 		if(node.val.type == TokenType.NOT) {
-			if(Token.isCmpToken(node.children.get(0).val.type)) {
-				node.children.get(0).val.type = Token.reverseCmp(node.children.get(0).val.type);
+			if(Tokens.isCmpToken(node.children.get(0).val.type)) {
+				node.children.get(0).val.type = Tokens.reverseCmp(node.children.get(0).val.type);
 				generateCmp(file, fn, node.children.get(0), null, null);
 			}
 			else {
-				if(Token.isBoolToken(node.children.get(0).val.type)) {
+				if(Tokens.isBoolToken(node.children.get(0).val.type)) {
 					generateBool(file, fn, node.children.get(0));
 				}
 				else {
@@ -218,11 +218,11 @@ public class CodeGenerator {
 			String success2 = "label" + label++;
 			String end = "label" + label++;
 			
-			if(Token.isCmpToken(node.children.get(0).val.type)) {
+			if(Tokens.isCmpToken(node.children.get(0).val.type)) {
 				generateCmp(file, fn, node.children.get(0), success1, end);
 			}
 			else {
-				if(Token.isBoolToken(node.children.get(0).val.type)) {
+				if(Tokens.isBoolToken(node.children.get(0).val.type)) {
 					generateBool(file, fn, node.children.get(0));
 				}
 				else {
@@ -237,11 +237,11 @@ public class CodeGenerator {
 				file.write("label" + success1 + ":\n");
 			}
 			
-			if(Token.isCmpToken(node.children.get(1).val.type)) {
+			if(Tokens.isCmpToken(node.children.get(1).val.type)) {
 				generateCmp(file, fn, node.children.get(1), success2, end);
 			}
 			else {
-				if(Token.isBoolToken(node.children.get(1).val.type)) {
+				if(Tokens.isBoolToken(node.children.get(1).val.type)) {
 					generateBool(file, fn, node.children.get(1));
 				}
 				else {
@@ -263,12 +263,12 @@ public class CodeGenerator {
 			String success2 = "label" + label++;
 			String end = "label" + label++;
 			
-			if(Token.isCmpToken(node.children.get(0).val.type)) {
-				node.children.get(0).val.type = Token.reverseCmp(node.children.get(0).val.type);
+			if(Tokens.isCmpToken(node.children.get(0).val.type)) {
+				node.children.get(0).val.type = Tokens.reverseCmp(node.children.get(0).val.type);
 				generateCmp(file, fn, node.children.get(0), success1, end);
 			}
 			else {
-				if(Token.isBoolToken(node.children.get(0).val.type)) {
+				if(Tokens.isBoolToken(node.children.get(0).val.type)) {
 					generateBool(file, fn, node.children.get(0));
 				}
 				else {
@@ -283,12 +283,12 @@ public class CodeGenerator {
 				file.write("label" + success1 + ":\n");
 			}
 			
-			if(Token.isCmpToken(node.children.get(1).val.type)) {
-				node.children.get(0).val.type = Token.reverseCmp(node.children.get(0).val.type);
+			if(Tokens.isCmpToken(node.children.get(1).val.type)) {
+				node.children.get(0).val.type = Tokens.reverseCmp(node.children.get(0).val.type);
 				generateCmp(file, fn, node.children.get(1), success2, end);
 			}
 			else {
-				if(Token.isBoolToken(node.children.get(1).val.type)) {
+				if(Tokens.isBoolToken(node.children.get(1).val.type)) {
 					generateBool(file, fn, node.children.get(1));
 				}
 				else {
@@ -307,7 +307,7 @@ public class CodeGenerator {
 		}
 	}
 	
-	private static void generateCmp(FileWriter file, FunctionTree fn, Node<Token> node, String success, String end) throws Exception {
+	private static void generateCmp(FileWriter file, FunctionTree fn, Node<Tokens> node, String success, String end) throws Exception {
 		if(success == null) {
 			success = "label" + label++;
 			end = "label" + label++;
@@ -368,11 +368,11 @@ public class CodeGenerator {
 		file.write(end + ":\n");
 	}
 	
-	private static void generateMath(FileWriter file, FunctionTree fn, Node<Token> node) throws Exception {
+	private static void generateMath(FileWriter file, FunctionTree fn, Node<Tokens> node) throws Exception {
 		String src = "";
 		
 		if(node.children != null) {
-			if(Token.isIncDec(node.val.type)) {
+			if(Tokens.isIncDec(node.val.type)) {
 				String op = node.val.type == TokenType.PP ? "\tinc\t" : "\tdec\t";
 				
 				if(node.children.size() == 1) {
@@ -482,12 +482,7 @@ public class CodeGenerator {
 		}
 	}
 	
-	/*
-	PP, MM,
-	 * 
-	 */
-	
-	private static String getLocation(Token t, int stackOffset) throws Exception {
+	private static String getLocation(Tokens t, int stackOffset) throws Exception {
 		if(t.val >= saveOffset) {
 			int offset = t.val - (saveOffset + Registers.preserveRegisters.length + 1);
 			if(offset >= 0 && offset < Registers.stackRegisters.length) return Registers.stackRegisters[offset];

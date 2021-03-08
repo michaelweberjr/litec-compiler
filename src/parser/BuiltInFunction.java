@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 import common.defs.FunctionTree;
 import common.defs.Symbol;
-import common.defs.Token;
+import common.defs.Tokens;
 import common.defs.TokenType;
 import common.util.OSVersion;
 
@@ -14,7 +14,7 @@ public class BuiltInFunction {
 		FunctionTree print = new FunctionTree();
 		print.name = new Symbol("print");
 		(print.argsList = new ArrayList<Symbol>()).add(new Symbol("value"));
-		print.returnType = new Token(TokenType.RET);
+		print.returnType = new Tokens(TokenType.RET);
 		print.isBuiltIn = true;
 		print.builtInCode = printFnCode();
 		return print;

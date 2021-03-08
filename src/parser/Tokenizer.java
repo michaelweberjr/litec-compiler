@@ -1,23 +1,17 @@
 package parser;
 
-import java.util.Deque;
-import java.util.LinkedList;
-
 import common.defs.Symbol;
-import common.defs.Token;
+import common.defs.Tokens;
 import common.defs.TokenType;
 
 public class Tokenizer {
-	public Deque<Token> tokens;
-	
-	public Tokenizer(String text) throws Exception {
-		tokens = new LinkedList<Token>();
+	public static void run(String text) throws Exception {
 		for(int i = 0; i < text.length(); i++) {
 			char ch = text.charAt(i);
 			// skip whitespace
 			if(ch == ' ' || ch == '\t' || ch =='\r') continue;
 			if(ch == '\n') {
-				tokens.add(new Token(TokenType.NL));
+				Tokens.pushBack(new Tokens(TokenType.NL));
 				continue;
 			}
 			
@@ -27,7 +21,7 @@ public class Tokenizer {
 					i += 2;
 					while(true) { 
 						if(text.charAt(i) == '\n') {
-							tokens.add(new Token(TokenType.NL));
+							Tokens.pushBack(new Tokens(TokenType.NL));
 							break;
 						}
 						i++;
@@ -41,7 +35,7 @@ public class Tokenizer {
 							i++;
 							break;
 						}
-						if(text.charAt(i) == '\n') tokens.add(new Token(TokenType.NL));
+						if(text.charAt(i) == '\n') Tokens.pushBack(new Tokens(TokenType.NL));
 						i++;
 					}
 					continue;
@@ -49,6 +43,12 @@ public class Tokenizer {
 			}
 			
 			// do numbers first
+			boolean neg = false;
+			if(ch == '-' && Character.isDigit(text.charAt(i+1))) {
+				neg = true;
+				ch = text.charAt(++i);
+			}
+			
 			if(Character.isDigit(ch))
 			{
 				int val = 0;
@@ -59,8 +59,10 @@ public class Tokenizer {
 					if(i == text.length()) break;
 				}
 				
+				if(neg) val = -val;
+				
 				i--;
-				tokens.add(new Token(TokenType.NUM, val));
+				Tokens.pushBack(new Tokens(TokenType.NUM, val));
 				continue;
 			}
 			
@@ -80,17 +82,35 @@ public class Tokenizer {
 				
 				switch(name)
 				{
+				case "if":
+					Tokens.pushBack(new Tokens(TokenType.IF));
+					break;
+				case "else":
+					Tokens.pushBack(new Tokens(TokenType.ELSE));
+					break;
+				case "for":
+					Tokens.pushBack(new Tokens(TokenType.FOR));
+					break;
+				case "while":
+					Tokens.pushBack(new Tokens(TokenType.WHILE));
+					break;
+				case "break":
+					Tokens.pushBack(new Tokens(TokenType.BREAK));
+					break;
+				case "continue":
+					Tokens.pushBack(new Tokens(TokenType.CONT));
+					break;
 				case "int":
-					tokens.add(new Token(TokenType.INT));
+					Tokens.pushBack(new Tokens(TokenType.INT));
 					break;
 				case "void":
-					tokens.add(new Token(TokenType.VOID));
+					Tokens.pushBack(new Tokens(TokenType.VOID));
 					break;
 				case "return":
-					tokens.add(new Token(TokenType.RET));
+					Tokens.pushBack(new Tokens(TokenType.RET));
 					break;
 				default:
-					tokens.add(new Token(TokenType.SYM, new Symbol(name)));
+					Tokens.pushBack(new Tokens(TokenType.SYM, new Symbol(name)));
 					break;
 				}
 				continue;
@@ -99,141 +119,141 @@ public class Tokenizer {
 			// do everything else last
 			switch(ch) {
 			case '(':
-				tokens.add(new Token(TokenType.LPAR));
+				Tokens.pushBack(new Tokens(TokenType.LPAR));
 				break;
 			case ')':
-				tokens.add(new Token(TokenType.RPAR));
+				Tokens.pushBack(new Tokens(TokenType.RPAR));
 				break;
 			case '{':
-				tokens.add(new Token(TokenType.LBRACE));
+				Tokens.pushBack(new Tokens(TokenType.LBRACE));
 				break;
 			case '}':
-				tokens.add(new Token(TokenType.RBRACE));
+				Tokens.pushBack(new Tokens(TokenType.RBRACE));
 				break;
 			case '=':
 				if(text.charAt(i+1) == '=') {
 					i++;
-					tokens.add(new Token(TokenType.EQ));
+					Tokens.pushBack(new Tokens(TokenType.EQ));
 				}
-				else tokens.add(new Token(TokenType.ASGN));
+				else Tokens.pushBack(new Tokens(TokenType.ASGN));
 				break;
 			case '!':
 				if(text.charAt(i+1) == '=') {
 					i++;
-					tokens.add(new Token(TokenType.NE));
+					Tokens.pushBack(new Tokens(TokenType.NE));
 				}
-				else tokens.add(new Token(TokenType.NOT));
+				else Tokens.pushBack(new Tokens(TokenType.NOT));
 				break;
 			case '<':
 				if(text.charAt(i+1) == '=') {
 					i++;
-					tokens.add(new Token(TokenType.LE));
+					Tokens.pushBack(new Tokens(TokenType.LE));
 				}
 				else if(text.charAt(i+1) == '<') {
 					i++;
 					if(text.charAt(i+1) == '=') {
 						i++;
-						tokens.add(new Token(TokenType.SHLEQ));
+						Tokens.pushBack(new Tokens(TokenType.SHLEQ));
 					}
-					else tokens.add(new Token(TokenType.LSH));
+					else Tokens.pushBack(new Tokens(TokenType.LSH));
 				}
-				else tokens.add(new Token(TokenType.LESS));
+				else Tokens.pushBack(new Tokens(TokenType.LESS));
 				break;
 			case '>':
 				if(text.charAt(i+1) == '=') {
 					i++;
-					tokens.add(new Token(TokenType.GE));
+					Tokens.pushBack(new Tokens(TokenType.GE));
 				}
 				else if(text.charAt(i+1) == '>') {
 					i++;
 					if(text.charAt(i+1) == '=') {
 						i++;
-						tokens.add(new Token(TokenType.SHREQ));
+						Tokens.pushBack(new Tokens(TokenType.SHREQ));
 					}
-					else tokens.add(new Token(TokenType.RSH));
+					else Tokens.pushBack(new Tokens(TokenType.RSH));
 				}
-				else tokens.add(new Token(TokenType.GRT));
+				else Tokens.pushBack(new Tokens(TokenType.GRT));
 				break;
 			case '+':
 				if(text.charAt(i+1) == '+') {
 					i++;
-					tokens.add(new Token(TokenType.PP));
+					Tokens.pushBack(new Tokens(TokenType.PP));
 				}
 				else if(text.charAt(i+1) == '=') {
 					i++;
-					tokens.add(new Token(TokenType.PLUSEQ));
+					Tokens.pushBack(new Tokens(TokenType.PLUSEQ));
 				}
-				else tokens.add(new Token(TokenType.PLUS));
+				else Tokens.pushBack(new Tokens(TokenType.PLUS));
 				break;
 			case '-':
 				if(text.charAt(i+1) == '-') {
 					i++;
-					tokens.add(new Token(TokenType.MM));
+					Tokens.pushBack(new Tokens(TokenType.MM));
 				}
 				else if(text.charAt(i+1) == '=') {
 					i++;
-					tokens.add(new Token(TokenType.MINEQ));
+					Tokens.pushBack(new Tokens(TokenType.MINEQ));
 				}
-				else tokens.add(new Token(TokenType.MIN));
+				else Tokens.pushBack(new Tokens(TokenType.MIN));
 				break;
 			case '*':
 				if(text.charAt(i+1) == '=') {
 					i++;
-					tokens.add(new Token(TokenType.MULEQ));
+					Tokens.pushBack(new Tokens(TokenType.MULEQ));
 				}
-				else tokens.add(new Token(TokenType.MUL));
+				else Tokens.pushBack(new Tokens(TokenType.MUL));
 				break;
 			case '/':
 				if(text.charAt(i+1) == '=') {
 					i++;
-					tokens.add(new Token(TokenType.DIVEQ));
+					Tokens.pushBack(new Tokens(TokenType.DIVEQ));
 				}
-				else tokens.add(new Token(TokenType.DIV));
+				else Tokens.pushBack(new Tokens(TokenType.DIV));
 				break;
 			case '%':
 				if(text.charAt(i+1) == '=') {
 					i++;
-					tokens.add(new Token(TokenType.MODEQ));
+					Tokens.pushBack(new Tokens(TokenType.MODEQ));
 				}
-				else tokens.add(new Token(TokenType.MOD));
+				else Tokens.pushBack(new Tokens(TokenType.MOD));
 				break;
 			case ';':
-				tokens.add(new Token(TokenType.SC));
+				Tokens.pushBack(new Tokens(TokenType.SC));
 				break;
 			case '~':
-				tokens.add(new Token(TokenType.BNOT));
+				Tokens.pushBack(new Tokens(TokenType.BNOT));
 				break;
 			case '|':
 				if(text.charAt(i+1) == '|') {
 					i++;
-					tokens.add(new Token(TokenType.OR));
+					Tokens.pushBack(new Tokens(TokenType.OR));
 				}
-				if(text.charAt(i+1) == '=') {
+				else if(text.charAt(i+1) == '=') {
 					i++;
-					tokens.add(new Token(TokenType.OREQ));
+					Tokens.pushBack(new Tokens(TokenType.OREQ));
 				}
-				else tokens.add(new Token(TokenType.BOR));
+				else Tokens.pushBack(new Tokens(TokenType.BOR));
 				break;
 			case '&':
 				if(text.charAt(i+1) == '&') {
 					i++;
-					tokens.add(new Token(TokenType.AND));
+					Tokens.pushBack(new Tokens(TokenType.AND));
 				}
-				if(text.charAt(i+1) == '=') {
+				else if(text.charAt(i+1) == '=') {
 					i++;
-					tokens.add(new Token(TokenType.ANDEQ));
+					Tokens.pushBack(new Tokens(TokenType.ANDEQ));
 				}
-				else tokens.add(new Token(TokenType.BAND));
+				else Tokens.pushBack(new Tokens(TokenType.BAND));
 				break;
 			case '^':
 				if(text.charAt(i+1) == '=') {
 					i++;
-					tokens.add(new Token(TokenType.XOREQ));
+					Tokens.pushBack(new Tokens(TokenType.XOREQ));
 				}
-				else tokens.add(new Token(TokenType.BXOR));
+				else Tokens.pushBack(new Tokens(TokenType.BXOR));
 				break;
 			case ',':
-				tokens.add(new Token(TokenType.COMMA));
+				Tokens.pushBack(new Tokens(TokenType.COMMA));
 				break;
 			default:
 				throw new Exception("Unknown token: " + text.charAt(i));
@@ -241,67 +261,4 @@ public class Tokenizer {
 		}
 	}	
 	
-	public void printTokens() {
-		for(Token token : tokens)
-		{
-			switch(token.type)
-			{
-			case LPAR:
-				System.out.print("TOKEN_LPAR\n");
-				break;
-			case RPAR:
-				System.out.print("TOKEN_RPAR\n");
-				break;
-			case LBRACE:
-				System.out.print("TOKEN_LBRA\n");
-				break;
-			case RBRACE:
-				System.out.print("TOKEN_RBRA\n");
-				break;
-			case EQ:
-				System.out.print("TOKEN_EQ\n");
-				break;
-			case PLUS:
-				System.out.print("TOKEN_PLUS\n");
-				break;
-			case MIN:
-				System.out.print("TOKEN_MIN\n");
-				break;
-			case MUL:
-				System.out.print("TOKEN_MUL\n");
-				break;
-			case DIV:
-				System.out.print("TOKEN_DIV\n");
-				break;
-			case MOD:
-				System.out.print("TOKEN_MOD\n");
-				break;
-			case SC:
-				System.out.print("TOKEN_SC\n");
-				break;
-			case INT:
-				System.out.print("TOKEN_INT\n");
-				break;
-			case NUM:
-				System.out.print("TOKEN_NUM: ");
-				System.out.println(token.val);
-				break;
-			case RET:
-				System.out.print("TOKEN_RET\n");
-				break;
-			case SYM:
-				System.out.print("TOKEN_SYM: ");
-				System.out.println(token.sym.name);
-				break;
-			case VOID:
-				System.out.print("TOKEN_VOID\n");
-				break;
-			case COMMA:
-				System.out.print("TOKEN_COMMA");
-				break;
-			default:
-				break;
-			}
-		}
-	}
 }

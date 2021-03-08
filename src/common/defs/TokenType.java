@@ -12,6 +12,7 @@ public enum TokenType {
 	LSH, RSH,
 	PLUSEQ, MINEQ, MULEQ, DIVEQ, MODEQ,
 	ANDEQ, OREQ, XOREQ, SHLEQ, SHREQ,
+	IF, ELSE, ELIF, FOR, WHILE, BREAK, CONT,
 	VOID, INT, RET, // keywords
 	NL	// internal use
 }

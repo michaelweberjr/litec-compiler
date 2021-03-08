@@ -3,49 +3,50 @@ package parser;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.LinkedList;
+import java.util.Stack;
 
 import common.defs.Registers;
 import common.defs.FunctionTree;
 import common.defs.Symbol;
-import common.defs.Token;
+import common.defs.Tokens;
 import common.defs.TokenType;
 import common.util.Node;
 
 public class Parser {
-	public ArrayList<FunctionTree> program;
+	public static ArrayList<FunctionTree> program;
+	private static Stack<Node<Tokens>> loopStack = new Stack<>();
 	
-	public Parser(Deque<Token> tokens) throws Exception {
+	public static void run() throws Exception {
 		program = new ArrayList<FunctionTree>();
 		addBuiltInFunctions();
 		
-		while(!tokens.isEmpty()) {
-			parseFunction(tokens);
+		while(!Tokens.isEmpty()) {
+			parseFunction();
 		}
 	}
 	
-	private void parseFunction(Deque<Token> tokens) throws Exception {
-		popTokenNL(tokens);
-		Token t = tokens.peek();
+	private static void parseFunction() throws Exception {
+		Tokens t = Tokens.peekFront();
 		
 		if(t.type == TokenType.INT || t.type == TokenType.VOID) {
 			FunctionTree fn = new FunctionTree();
-			fn.returnType = tokens.remove();
-			fn.name = popToken(tokens, TokenType.SYM, "Expected function name").sym;
+			fn.returnType = Tokens.popFront();
+			fn.name = popToken(TokenType.SYM, "Expected function name").sym;
 			fn.name.setFn();
 			
 			for(FunctionTree fns : program)
 				if(fns.name.name.equals(fn.name.name))
 					throw new Exception("Function " + fn.name.name + " has already been defined");
+			program.add(fn);
 			
-			popToken(tokens, TokenType.LPAR, "Missing \'(\' in function defintion");
+			popToken(TokenType.LPAR, "Missing \'(\' in function defintion");
 			
-			if(tokens.peek().type != TokenType.RPAR) {
+			if(Tokens.peekFront().type != TokenType.RPAR) {
 				while(true) {
-					popToken(tokens, TokenType.INT, "Expected variable type in function definition");
-					fn.argsList.add(popToken(tokens, TokenType.SYM, "Expected variable name in function difinition").sym);
-					popTokenNL(tokens);
-					if(tokens.peek().type == TokenType.COMMA) {
-						tokens.poll();
+					popToken(TokenType.INT, "Expected variable type in function definition");
+					fn.argsList.add(popToken(TokenType.SYM, "Expected variable name in function difinition").sym);
+					if(Tokens.peekFront().type == TokenType.COMMA) {
+						Tokens.popFront();
 					}
 					else {
 						break;
@@ -53,30 +54,31 @@ public class Parser {
 				}
 			}
 			
-			popToken(tokens, TokenType.RPAR, "Missing \')\' in function defintion");
-			popToken(tokens, TokenType.LBRACE, "Missing \'{\' in function defintion");
+			popToken(TokenType.RPAR, "Missing \')\' in function defintion");
+			popToken(TokenType.LBRACE, "Missing \'{\' in function defintion");
 			
-			popTokenNL(tokens);
-			while(tokens.peek().type != TokenType.RBRACE) {
-				parseStatement(tokens, fn, fn.statements.root);
+			while(Tokens.peekFront().type != TokenType.RBRACE) {
+				parseStatement(fn, fn.statements.root);
 			}
 			
-			popToken(tokens, TokenType.RBRACE, "Missing \'}\' in function defintion");
+			popToken(TokenType.RBRACE, "Missing \'}\' in function defintion");
 			
 			if(fn.returnType.type != TokenType.VOID && !fn.hasReturn) 
 				throw new ParserError("Missing return statement in function: " + fn.name.name);
-			
-			program.add(fn);
 		}
 		else throw new ParserError("Missing type for function definition");
 	}
 	
-	private void parseStatement(Deque<Token> tokens, FunctionTree fn, Node<Token> node) throws Exception {
-		popTokenNL(tokens);
-		Token t = tokens.peek();	
+	private static void parseStatement(FunctionTree fn, Node<Tokens> node) throws Exception {
+		Tokens t = Tokens.peekFront();	
 		if(t.type == TokenType.RBRACE || t.type == TokenType.SC) return;
 		
-		if(t.type == TokenType.INT) parseVariableDec(tokens, fn, node);
+		boolean found = false;
+		if(t.type == TokenType.INT) {
+			parseVariableDec(fn, node);
+			popToken(TokenType.SC, "Expected \';\' at end of statement");
+			found = true;
+		}
 		else if(t.type == TokenType.SYM) {
 			boolean isFn = false;
 			FunctionTree callee = null;
@@ -88,34 +90,69 @@ public class Parser {
 				}
 			}
 			
-			if(isFn) parseFunctionCall(tokens, fn, callee, node);
+			if(isFn) parseFunctionCall(fn, callee, node);
 			else {
-				Token save = tokens.poll();
-				if(tokens.peek().type == TokenType.PP || tokens.peek().type == TokenType.MM) {
-					tokens.addFirst(save);
-					parseIncDec(tokens, fn, node);
+				Tokens save = Tokens.popFront();
+				if(Tokens.peekFront().type == TokenType.PP || Tokens.peekFront().type == TokenType.MM) {
+					Tokens.pushFront(save);
+					parseIncDec(fn, node);
 				}
 				else {
-					tokens.addFirst(save);
-					parseAssignment(tokens, fn, node);
+					Tokens.pushFront(save);
+					parseAssignment(fn, node);
 				}
 			}
+			popToken(TokenType.SC, "Expected \';\' at end of statement");
+			found = true;
 		}
 		else if(t.type == TokenType.PP || t.type == TokenType.MM) {
-			parseIncDec(tokens, fn, node);
+			parseIncDec(fn, node);
+			popToken(TokenType.SC, "Expected \';\' at end of statement");
+			found = true;
 		}
 		else if(t.type == TokenType.RET) {
-			parseReturn(tokens, fn, node);
+			parseReturn(fn, node);
+			popToken(TokenType.SC, "Expected \';\' at end of statement");
+			found = true;
+		}
+		else if(t.type == TokenType.BREAK) {
+			Node<Tokens> n = new Node<>(Tokens.popFront());
+			if(loopStack.isEmpty()) throw new Exception("No loop to break from");
+			n.children.add(loopStack.peek());
+			node.addChild(n);
+			popToken(TokenType.SC, "Expected \';\' at end of statement");
+			found = true;
+		}
+		else if(t.type == TokenType.CONT) {
+			Node<Tokens> n = new Node<>(Tokens.popFront());
+			if(loopStack.isEmpty()) throw new Exception("Not loop to continue from");
+			n.children.add(loopStack.peek());
+			node.addChild(n);
+			popToken(TokenType.SC, "Expected \';\' at end of statement");
+			found = true;
 		}
 		
-		popToken(tokens, TokenType.SC, "Expected \';\' at end of statement");
+		if(t.type == TokenType.IF) {
+			parseIf(fn, node);
+			found = true;
+		}
+		else if(t.type == TokenType.FOR) {
+			parseFor(fn, node);
+			found = true;
+		}
+		else if(t.type == TokenType.WHILE) {
+			parseWhile(fn, node);
+			found = true;
+		}
+		
+		if(!found) throw new ParserError("Unexcpted token");
 	}
 
-	private void parseAssignment(Deque<Token> tokens, FunctionTree fn, Node<Token> node) throws Exception {
+	private static void parseAssignment(FunctionTree fn, Node<Tokens> node) throws Exception {
 		int varOffset = -1;
 		for(int i = 0; i < fn.frameVar.size(); i++) {
 			Symbol var = fn.frameVar.get(i);
-			if(var.name.equals(tokens.peek().sym.name)) {
+			if(var.name.equals(Tokens.peekFront().sym.name)) {
 				varOffset = i;
 				break;
 			}
@@ -124,79 +161,147 @@ public class Parser {
 		if(varOffset < 0)
 			for(int i = 0; i < fn.argsList.size(); i++) {
 				Symbol var = fn.argsList.get(i);
-				if(var.name.equals(tokens.peek().sym.name)) {
+				if(var.name.equals(Tokens.peekFront().sym.name)) {
 					varOffset = Registers.preserveRegisters.length + fn.frameVar.size() + 1 + i;
 					break;
 				}
 			}
 		
-		if(varOffset < 0) throw new ParserError("Undefined identifier: " + tokens.peek().sym.name);
+		if(varOffset < 0) throw new ParserError("Undefined identifier: " + Tokens.peekFront().sym.name);
 		
 		
-		Token var = tokens.poll();
-		popTokenNL(tokens);
-		if(!Token.isOpEq(tokens.peek().type)) throw new ParserError("Expected \'=\' after variable name");
-		Node<Token> n = new Node<Token>(tokens.poll());
+		Tokens var = Tokens.popFront();
+		if(!Tokens.isOpEq(Tokens.peekFront().type)) throw new ParserError("Expected \'=\' after variable name");
+		Node<Tokens> n = new Node<Tokens>(Tokens.popFront());
 		node.addChild(n);
 		var.val = varOffset;
 		n.addChild(var);
-		parseMathExp(tokens, fn, n);
+		parseMathExp(fn, n);
 	}
 	
-	private void parseVariableDec(Deque<Token> tokens, FunctionTree fn, Node<Token> node) throws Exception {
-		tokens.poll();
-		popTokenNL(tokens);
-		if(tokens.peek().type != TokenType.SYM) throw new ParserError("Expceted variable name");
+	private static void parseVariableDec(FunctionTree fn, Node<Tokens> node) throws Exception {
+		Tokens.popFront();
+		if(Tokens.peekFront().type != TokenType.SYM) throw new ParserError("Expceted variable name");
 		
 		boolean foundVar = false;
 		for(Symbol var : fn.frameVar) 
-			if(var.name.equals(tokens.peek().sym.name)) {
+			if(var.name.equals(Tokens.peekFront().sym.name)) {
 				foundVar = true;
 				break;
 			}
 		
 		if(!foundVar)
 			for(Symbol var : fn.argsList) 
-				if(var.name.equals(tokens.peek().sym.name)) {
+				if(var.name.equals(Tokens.peekFront().sym.name)) {
 					foundVar = true;
 					break;
 				}
 		
-		if(foundVar) throw new ParserError("Redifinition of identifier: " + tokens.peek().sym.name);
+		if(foundVar) throw new ParserError("Redifinition of identifier: " + Tokens.peekFront().sym.name);
 		
-		fn.frameVar.add(tokens.peek().sym);
-		tokens.peek().sym.setVar();
+		fn.frameVar.add(Tokens.peekFront().sym);
+		Tokens.peekFront().sym.setVar();
 		
-		Token t = tokens.poll();
-		popTokenNL(tokens);
-		if(Token.isOpEq(tokens.peek().type)) {
-			tokens.addFirst(t);
-			parseAssignment(tokens, fn, node);
+		Tokens t = Tokens.popFront();
+		if(Tokens.isOpEq(Tokens.peekFront().type)) {
+			Tokens.pushFront(t);
+			parseAssignment(fn, node);
 		}
 	}
 	
-	private void parseFunctionCall(Deque<Token> tokens, FunctionTree fn, FunctionTree callee, Node<Token> node) throws Exception {
-		Node<Token> n = new Node<Token>(new Token(TokenType.CALL));
+	private static void parseIf(FunctionTree fn, Node<Tokens> node) throws Exception {
+		Node<Tokens> n = new Node<Tokens>(popToken(TokenType.IF, "Missing if decleration"));
+		popToken(TokenType.LPAR, "Missing \'(\' in if statement");
+		parseMathExp(fn, n);
+		popToken(TokenType.RPAR, "Missing \')\' in if statement");
+		parseCodeBlock(fn, n);
 		node.addChild(n);
-		n.addChild(tokens.poll());
-		popToken(tokens, TokenType.LPAR, "Expceted \'(\' in function call");
-		while(tokens.peek().type != TokenType.RPAR) {
-			popTokenNL(tokens);
-			parseMathExp(tokens, fn, n);
-			popTokenNL(tokens);
-			if(tokens.peek().type == TokenType.COMMA) tokens.poll();
+		
+		while(Tokens.peekFront().type == TokenType.ELSE) {
+			n = new Node<>(Tokens.popFront());
+			if(Tokens.peekFront().type == TokenType.IF) {
+				n.val.type = TokenType.ELIF;
+				Tokens.popFront();
+				popToken(TokenType.LPAR, "Missing \'(\' in if statement");
+				parseMathExp(fn, n);
+				popToken(TokenType.RPAR, "Missing \')\' in if statement");
+			}
+			
+			parseCodeBlock(fn, n);
+			node.addChild(n);
+			if(n.val.type == TokenType.ELSE) break;
+		}
+	}
+	
+	private static void parseFor(FunctionTree fn, Node<Tokens> node) throws Exception {
+		Node<Tokens> n = new Node<>(popToken(TokenType.FOR, "Missing for decleration"));
+		loopStack.add(n);
+		popToken(TokenType.LPAR, "Missing \'(\' in if statement");
+		if(Tokens.peekFront().type == TokenType.SC) {
+			Tokens.popFront();
+			n.addChild(new Node<>(new Tokens(TokenType.ROOT)));
+		}
+		else parseStatement(fn, n);
+		
+		if(Tokens.peekFront().type == TokenType.SC) {
+			Tokens.popFront();
+			n.addChild(new Node<>(new Tokens(TokenType.ROOT)));
+		}
+		else parseStatement(fn, n);
+		
+		parseMathExp(fn, n);
+		popToken(TokenType.RPAR, "Missing \')\' in if statement");
+		
+		parseCodeBlock(fn, n);
+		node.addChild(n);
+		loopStack.pop();
+	}
+	
+	private static void parseWhile(FunctionTree fn, Node<Tokens> node) throws Exception {
+		Node<Tokens> n = new Node<>(popToken(TokenType.WHILE, "Missing while decleration"));
+		n.val.type = TokenType.FOR;
+		loopStack.add(n);
+		popToken(TokenType.LPAR, "Missing \'(\' in if statement");
+		n.addChild(new Node<>(new Tokens(TokenType.ROOT)));
+		parseMathExp(fn, n);
+		n.addChild(new Node<>(new Tokens(TokenType.ROOT)));
+		popToken(TokenType.RPAR, "Missing \')\' in if statement");
+		
+		parseCodeBlock(fn, n);
+		node.addChild(n);
+		loopStack.pop();
+	}
+	
+	private static void parseCodeBlock(FunctionTree fn, Node<Tokens> node) throws Exception {
+		if(Tokens.peekFront().type != TokenType.LBRACE) parseStatement(fn, node);
+		else {
+			popToken(TokenType.LBRACE, "Missing \'{\' in statement");
+			while(Tokens.peekFront().type != TokenType.RBRACE) {
+				parseStatement(fn, node);
+			}
+			Tokens.popFront();
+		}
+	}
+	
+	private static void parseFunctionCall(FunctionTree fn, FunctionTree callee, Node<Tokens> node) throws Exception {
+		Node<Tokens> n = new Node<Tokens>(new Tokens(TokenType.CALL));
+		node.addChild(n);
+		n.addChild(Tokens.popFront());
+		popToken(TokenType.LPAR, "Expceted \'(\' in function call");
+		while(Tokens.peekFront().type != TokenType.RPAR) {
+			parseMathExp(fn, n);
+			if(Tokens.peekFront().type == TokenType.COMMA) Tokens.popFront();
 		}
 		if(n.children.size() != callee.argsList.size()+1)
 			throw new ParserError("Function call to " + callee.name.name + " with " + n.children.size() + " arguments, function call requires " + callee.argsList.size());
-		popToken(tokens, TokenType.RPAR, "Expceted \')\' in function call");
+		popToken(TokenType.RPAR, "Expceted \')\' in function call");
 	}
 	
-	private void parseReturn(Deque<Token> tokens, FunctionTree fn, Node<Token> node) throws Exception {
-		tokens.poll();
-		Node<Token> n = new Node<Token>(new Token(TokenType.RET));
+	private static void parseReturn(FunctionTree fn, Node<Tokens> node) throws Exception {
+		Tokens.popFront();
+		Node<Tokens> n = new Node<Tokens>(new Tokens(TokenType.RET));
 		node.addChild(n);
-		popTokenNL(tokens);
-		if(tokens.peek().type == TokenType.SC) {
+		if(Tokens.peekFront().type == TokenType.SC) {
 			if(fn.returnType.type == TokenType.VOID) {
 				fn.hasReturn = true;
 				return;
@@ -204,21 +309,21 @@ public class Parser {
 			else throw new ParserError("Function " + fn.name.name + "requires a math expresion when returning"); 
 		}
 		
-		parseMathExp(tokens, fn, n);
+		parseMathExp(fn, n);
 		fn.hasReturn = true;
 	}
 	
-	private void parseIncDec(Deque<Token> tokens, FunctionTree fn, Node<Token> node) throws Exception {
-		Node<Token> var;
-		Node<Token> math;
-		if(tokens.peek().type == TokenType.PP || tokens.peek().type == TokenType.MM) {
-			math = new Node<>(tokens.poll());
-			var = new Node<>(tokens.poll());
+	private static void parseIncDec(FunctionTree fn, Node<Tokens> node) throws Exception {
+		Node<Tokens> var;
+		Node<Tokens> math;
+		if(Tokens.peekFront().type == TokenType.PP || Tokens.peekFront().type == TokenType.MM) {
+			math = new Node<>(Tokens.popFront());
+			var = new Node<>(Tokens.popFront());
 		}
 		else {
-			var = new Node<>(tokens.poll());
-			math = new Node<>(tokens.poll());
-			math.addChild(new Node<Token>(new Token(TokenType.NL)));
+			var = new Node<>(Tokens.popFront());
+			math = new Node<>(Tokens.popFront());
+			math.addChild(new Node<Tokens>(new Tokens(TokenType.ROOT)));
 		}
 		math.addChild(var);
 		
@@ -245,29 +350,35 @@ public class Parser {
 		var.val.val = varOffset;
 	}
 	
-	private void parseMathExp(Deque<Token> tokens, FunctionTree fn, Node<Token> node) throws Exception {
-		Deque<Node<Token>> stack = new LinkedList<Node<Token>>();
-		Deque<Node<Token>> output = new LinkedList<Node<Token>>();
-		Node<Token> nodeTest = new Node<Token>(new Token(TokenType.LPAR));
+	private static void parseMathExp(FunctionTree fn, Node<Tokens> node) throws Exception {
+		Deque<Node<Tokens>> stack = new LinkedList<Node<Tokens>>();
+		Deque<Node<Tokens>> output = new LinkedList<Node<Tokens>>();
+		Node<Tokens> nodeTest = new Node<Tokens>(new Tokens(TokenType.LPAR));
 		TokenType last = TokenType.ROOT;
 		
 		while(true) {
-			popTokenNL(tokens);
-			Token t = tokens.poll();
+			Tokens t = Tokens.popFront();
 			if(t.type == TokenType.SC || t.type == TokenType.COMMA || (t.type == TokenType.RPAR && !stack.contains(nodeTest))) {
-				tokens.addFirst(t);
+				Tokens.pushFront(t);
 				break;
 			}
 			
-			if(t.type == TokenType.MIN && (last == TokenType.NUM || last == TokenType.SYM || last == TokenType.CALL || last == TokenType.RPAR || last == TokenType.ROOT)) t.type = TokenType.NEG;
-			if((t.type == TokenType.NUM || t.type == TokenType.SYM || t.type == TokenType.CALL) && (last == TokenType.NUM || last == TokenType.SYM || last == TokenType.CALL || last == TokenType.RPAR))
-				throw new ParserError("expected math operation after literal type");
-			if(Token.isMathToken(t.type) && Token.isMathToken(last) && Token.mathArgCount(t.type) > 1)
+			if(t.type == TokenType.MIN && (Tokens.isMathToken(last) || last == TokenType.LPAR || last == TokenType.ROOT)) {
+				t.type = TokenType.NEG;
+			}
+			if((t.type == TokenType.NUM || t.type == TokenType.SYM || t.type == TokenType.CALL) && (last == TokenType.NUM || last == TokenType.SYM || last == TokenType.CALL || last == TokenType.RPAR)) {
+				if(t.type == TokenType.NUM && t.val < 0) {
+					Tokens.pushFront(t);
+					t = new Tokens(TokenType.PLUS);
+				}
+				else throw new ParserError("expected math operation after literal type");
+			}
+			if(Tokens.isMathToken(t.type) && Tokens.isMathToken(last) && Tokens.mathArgCount(t.type) > 1)
 				throw new ParserError("expected literal after math operation");
-			last = Token.mathArgCount(t.type) == 1 ? TokenType.NUM : t.type;
+			last = Tokens.mathArgCount(t.type) == 1 ? TokenType.NUM : t.type;
 			
 			if(t.type == TokenType.NUM) {
-				output.add(new Node<Token>(t));
+				output.add(new Node<Tokens>(t));
 			}
 			else if(t.type == TokenType.SYM) {
 				int varOffset = -1;
@@ -289,15 +400,15 @@ public class Parser {
 					}
 				
 				if(varOffset >= 0) {
-					if(tokens.peek().type == TokenType.PP || tokens.peek().type == TokenType.MM) {
-						Node<Token> n =  new Node<Token>(new Token(TokenType.ROOT));
-						tokens.addFirst(t);
-						parseIncDec(tokens, fn, n);
+					if(Tokens.peekFront().type == TokenType.PP || Tokens.peekFront().type == TokenType.MM) {
+						Node<Tokens> n =  new Node<Tokens>(new Tokens(TokenType.ROOT));
+						Tokens.pushFront(t);
+						parseIncDec(fn, n);
 						output.add(n.children.get(0));
 					} 
 					else {
 						t.val = varOffset;
-						output.add(new Node<Token>(t));
+						output.add(new Node<Tokens>(t));
 					}
 					continue;
 				}
@@ -312,24 +423,50 @@ public class Parser {
 				
 				if(callee == null) throw new Exception("Undefined identifer: " + t.sym.name);
 				
-				Node<Token> n = new Node<Token>(new Token(TokenType.ROOT));
-				tokens.addFirst(t);
-				parseFunctionCall(tokens, fn, callee, n);
+				Node<Tokens> n = new Node<Tokens>(new Tokens(TokenType.ROOT));
+				Tokens.pushFront(t);
+				parseFunctionCall(fn, callee, n);
 				output.add(n.children.get(0));
 			}
 			else if(t.type == TokenType.PP || t.type == TokenType.MM) {
-				tokens.addFirst(t);
-				Node<Token> n = new Node<>(new Token(TokenType.ROOT));
-				parseIncDec(tokens, fn, n);
+				Tokens.pushFront(t);
+				Node<Tokens> n = new Node<>(new Tokens(TokenType.ROOT));
+				parseIncDec(fn, n);
+				output.add(n.children.get(0));
 			}
-			else if(Token.mathArgCount(t.type) == 1) {
-				Node<Token> n = new Node<Token>(new Token(t.type));
-				popTokenNL(tokens);
-				tokens.poll();
-				parseMathExp(tokens, fn, n);
+			else if(Tokens.mathArgCount(t.type) == 1) {
+				Node<Tokens> n = new Node<>(t);
+				
+				if(Tokens.peekFront().type == TokenType.LPAR) {
+					Tokens.popFront();
+					parseMathExp(fn, n);
+					popToken(TokenType.RPAR, "Missing \')\' in math expression");
+				}
+				else if(Tokens.peekFront().type == TokenType.SYM) {
+					if(Parser.isFunctionCall(Tokens.peekFront().sym)) {
+						FunctionTree callee = null;
+						for(FunctionTree fns : program) {
+							if(fns.name.name.equals(t.sym.name)) {
+								callee = fns;
+								break;
+							}
+						}
+						
+						Parser.parseFunctionCall(fn, callee, nodeTest);
+					}
+					else if(Parser.isVariable(fn, Tokens.peekFront().sym)) {
+						n.children.add(new Node<>(Tokens.popFront()));
+					}
+					else throw new ParserError("Unkown symbol: " + Tokens.peekFront().sym.name);
+				}
+				else if(Tokens.peekFront().type == TokenType.NUM) {
+					n.children.add(new Node<>(Tokens.popFront()));
+				}
+				else throw new ParserError("Expected symbol or number literal after single argument math operation");
+				output.add(n);
 			}
 			else if(t.type == TokenType.LPAR) {
-				stack.add(new Node<Token>(t));
+				stack.add(new Node<Tokens>(t));
 			}
 			else if(t.type == TokenType.RPAR) {
 				while(true) {
@@ -342,14 +479,14 @@ public class Parser {
 				}
 			}
 			else {
-				if(stack.isEmpty() || Token.evaluationLevel(t.type) > Token.evaluationLevel(stack.peekLast().val.type)) {
-					stack.add(new Node<Token>(t));
+				if(stack.isEmpty() || Tokens.evaluationLevel(t.type) > Tokens.evaluationLevel(stack.peekLast().val.type)) {
+					stack.add(new Node<Tokens>(t));
 				}
 				else {
-					while(!stack.isEmpty() && Token.evaluationLevel(t.type) <= Token.evaluationLevel(stack.peekLast().val.type)) {
+					while(!stack.isEmpty() && Tokens.evaluationLevel(t.type) <= Tokens.evaluationLevel(stack.peekLast().val.type)) {
 						output.add(stack.pollLast());
 					}
-					stack.add(new Node<Token>(t));
+					stack.add(new Node<Tokens>(t));
 				}
 			}
 		}
@@ -358,37 +495,49 @@ public class Parser {
 		buildMathTree(output, node);
 	}
 	
-	private Token popToken(Deque<Token> tokens, TokenType type, String errorMsg) throws Exception {
-		popTokenNL(tokens);
-		Token t = tokens.poll();
+	private static Tokens popToken(TokenType type, String errorMsg) throws Exception {
+		Tokens t = Tokens.popFront();
 		if(t == null) throw new ParserError(errorMsg);
 		if(t.type != type) throw new ParserError(errorMsg);
 		return t;
 	}
 	
-	private void popTokenNL(Deque<Token> tokens) {
-		while(tokens.peek().type == TokenType.NL) {
-			ParserError.lineNum++;
-			tokens.poll();
-		}
-	}
-	
-	private void buildMathTree(Deque<Node<Token>> stack, Node<Token> node) throws Exception {
+	private static void buildMathTree(Deque<Node<Tokens>> stack, Node<Tokens> node) throws Exception {
 		if(stack.isEmpty()) return;
 		
 		node.addChild(stack.pollLast());
 		node = node.children.get(node.children.size()-1);
-		if(Token.isMathToken(node.val.type)) {
+		if(Tokens.isMathToken(node.val.type)) {
 			buildMathTree(stack, node);
 			buildMathTree(stack, node);
 		}
 	}
 	
-	private void addBuiltInFunctions() {
+	private static boolean isFunctionCall(Symbol sym) {
+		for(FunctionTree fn : program) {
+			if(fn.name.name.equals(sym.name)) return true;
+		}
+		
+		return false;
+	}
+	
+	private static boolean isVariable(FunctionTree fn, Symbol sym) {
+		for(Symbol fn_sym : fn.argsList) {
+			if(fn_sym.name.equals(sym.name)) return true;
+		}
+		
+		for(Symbol fn_sym : fn.frameVar) {
+			if(fn_sym.name.equals(sym.name)) return true;
+		}
+		
+		return false;
+	}
+	
+	private static void addBuiltInFunctions() {
 		program.add(BuiltInFunction.printFnTree());
 	}
 	
-	public void printParserTree() {
+	public static void printParserTree() {
 		for(FunctionTree fn : program) {
 			System.out.println("============================================================");
 			System.out.println(fn.name.name + ": " + (fn.returnType.type == TokenType.VOID ? "void" : "int"));

@@ -11,7 +11,7 @@ import common.defs.Location;
 import common.defs.OpCode;
 import common.defs.Registers;
 import common.defs.Symbol;
-import common.defs.Token;
+import common.defs.Tokens;
 import common.defs.TokenType;
 import common.util.Pair;
 
@@ -19,7 +19,7 @@ public class Tokenizer {
 
 	public static ArrayList<Instruction> parseProgram(String text) throws Exception {
 		ArrayList<Instruction> byteCode = new ArrayList<Instruction>();
-		Deque<Token> tokens = new LinkedList<Token>();
+		Deque<Tokens> tokens = new LinkedList<Tokens>();
 		tokenize(tokens, VirtualMachine.preamble);
 		tokenize(tokens, text);
 		
@@ -29,7 +29,7 @@ public class Tokenizer {
 		for(int i = 0; i < Registers.lower.length; i++) registers.put(Registers.lower[i], i);
 		
 		while(!tokens.isEmpty()) {
-			Token t = tokens.pollFirst();
+			Tokens t = tokens.pollFirst();
 			if(t.type != TokenType.SYM) throw new Exception("Each line must start with a symbol");
 			
 			Instruction code = new Instruction(OpCode.NOP);
@@ -67,7 +67,7 @@ public class Tokenizer {
 				case "jle":
 				case "jg":
 				case "jge":
-					Token fn = tokens.pollFirst();
+					Tokens fn = tokens.pollFirst();
 					if(fn == null || fn.type != TokenType.SYM) throw new Exception("Missing function name");
 					
 					if(getBuiltIn(fn.sym.name) > -1) {
@@ -300,7 +300,7 @@ public class Tokenizer {
 		return byteCode;
 	}
 	
-	private static void tokenize(Deque<Token> tokens, String text) throws Exception {
+	private static void tokenize(Deque<Tokens> tokens, String text) throws Exception {
 		int start = skipPreamble(text);
 		
 		for(int i = start; i < text.length(); i++) {
@@ -326,7 +326,7 @@ public class Tokenizer {
 					i++;
 					if(i == text.length()) break;
 				}
-				tokens.add(new Token(TokenType.NUM, val));
+				tokens.add(new Tokens(TokenType.NUM, val));
 				i--;
 				continue;
 			}
@@ -350,7 +350,7 @@ public class Tokenizer {
 				}
 				
 				if(!name.equals("qword"))				
-					tokens.add(new Token(TokenType.SYM, new Symbol(name)));
+					tokens.add(new Tokens(TokenType.SYM, new Symbol(name)));
 				i--;
 				
 				continue;
@@ -359,19 +359,19 @@ public class Tokenizer {
 			// grab the odd single characters
 			switch(ch) {
 			case ':':
-				tokens.add(new Token(TokenType.COLON));
+				tokens.add(new Tokens(TokenType.COLON));
 				break;
 			case '[':
-				tokens.add(new Token(TokenType.LBRACKET));
+				tokens.add(new Tokens(TokenType.LBRACKET));
 				break;
 			case ']':
-				tokens.add(new Token(TokenType.RBRACKET));
+				tokens.add(new Tokens(TokenType.RBRACKET));
 				break;
 			case ',':
-				tokens.add(new Token(TokenType.COMMA));
+				tokens.add(new Tokens(TokenType.COMMA));
 				break;
 			case '+':
-				tokens.add(new Token(TokenType.PLUS));
+				tokens.add(new Tokens(TokenType.PLUS));
 				break;
 			default:
 				throw new Exception("Bad token in interpreter: " + ch);

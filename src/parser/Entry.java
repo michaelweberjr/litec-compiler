@@ -68,11 +68,11 @@ public class Entry {
 	}
 
 	public static void runParser(String text, String output) throws Exception {
-		Tokenizer tokenizer = new Tokenizer(text);
-		Parser parser = new Parser(tokenizer.tokens);
-		Optimizer.optimize(parser.program);
+		Tokenizer.run(text);
+		Parser.run();
+		Optimizer.optimize(Parser.program);
 		FileWriter file = new FileWriter(output);
-		CodeGenerator.generate(file, parser.program);
+		CodeGenerator.generate(file, Parser.program);
 		file.close();
 	}
 	

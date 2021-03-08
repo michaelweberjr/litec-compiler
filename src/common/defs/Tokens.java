@@ -1,29 +1,65 @@
 package common.defs;
 
-public class Token {
+import java.util.Deque;
+import java.util.LinkedList;
+
+import parser.ParserError;
+
+public class Tokens {
 	public TokenType type;
 	public Symbol sym;
 	public int val;
 	
-	public Token(TokenType type)
+	private static Deque<Tokens> queue = new LinkedList<Tokens>();
+	
+	public Tokens(TokenType type)
 	{
 		this(type, 0);
 	}
 	
-	public Token(TokenType type, int val)
+	public Tokens(TokenType type, int val)
 	{
 		this.type = type;
 		this.val = val;
 	}
 	
-	public Token(TokenType type, Symbol sym)
+	public Tokens(TokenType type, Symbol sym)
 	{
 		this.type = type;
 		this.sym = sym;
 	}
 	
+	@Override
 	public boolean equals(Object e) {
-		return ((Token) e).type == this.type;
+		return ((Tokens) e).type == this.type;
+	}
+	
+	public static Tokens popFront() {
+		while(queue.peek().type == TokenType.NL) {
+			queue.poll();
+			ParserError.lineNum++;
+		}
+		return queue.poll();
+	}
+	
+	public static Tokens peekFront() {
+		while(queue.peek().type == TokenType.NL) {
+			queue.poll();
+			ParserError.lineNum++;
+		}
+		return queue.peek();
+	}
+	
+	public static void pushFront(Tokens t) {
+		queue.addFirst(t);
+	}
+	
+	public static void pushBack(Tokens t) {
+		queue.addLast(t);
+	}
+	
+	public static boolean isEmpty() {
+		return queue.isEmpty();
 	}
 	
 	public static boolean isMathToken(TokenType type) {
