@@ -209,12 +209,12 @@ void testFlowControl()
 		}
 	}
 
-	/*for(int i = 605; i < 615; i++)
+	for(int i = 605; i < 615; i++)
 	{
 		print(i);
 		if(i == 610) break;
-		print(0);
-	}*/
+		if(i > 610) print(0);
+	}
 	
 	c = 0;
 	while(1)
@@ -249,5 +249,5 @@ void main()
 	testCmpAndBoolOperations();
 	testRecursion();
 	testFlowControl();
-	print(1);
+	print(1001);
 }

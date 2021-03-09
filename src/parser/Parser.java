@@ -231,22 +231,54 @@ public class Parser {
 			Tokens.popFront();
 			n.addChild(new Node<>(new Tokens(TokenType.ROOT)));
 		}
-		else parseStatement(fn, n);
+		else {
+			parseExpr(fn, n);
+			popToken(TokenType.SC, "Missing \';\' in for statement");
+		}
 		
 		if(Tokens.peekFront().type == TokenType.SC) {
 			Tokens.popFront();
 			n.addChild(new Node<>(new Tokens(TokenType.ROOT)));
 		}
-		else parseStatement(fn, n);
+		else {
+			parseExpr(fn, n);
+			popToken(TokenType.SC, "Missing \';\' in for statement");
+		}
 		
-		parseMathExp(fn, n);
-		popToken(TokenType.RPAR, "Missing \')\' in if statement");
 		
+		if(Tokens.peekFront().type == TokenType.RPAR) {
+			Tokens.popFront();
+			n.addChild(new Node<>(new Tokens(TokenType.ROOT)));
+		}
+		else {
+			parseExpr(fn, n);
+			popToken(TokenType.RPAR, "Missing \')\' in for statement");
+		}
+				
 		parseCodeBlock(fn, n);
 		node.addChild(n);
 		loopStack.pop();
 	}
 	
+	private static void parseExpr(FunctionTree fn, Node<Tokens> node) throws Exception {
+		Tokens t = Tokens.peekFront();
+		if(t.type == TokenType.INT) {
+			parseVariableDec(fn, node);
+		}
+		else if(t.type == TokenType.SYM) {
+			Tokens.popFront();
+			if(Tokens.isOpEq(Tokens.peekFront().type)) {
+				Tokens.pushFront(t);
+				parseAssignment(fn, node);
+			}
+			else {
+				Tokens.pushFront(t);
+				parseMathExp(fn, node);
+			}
+		}
+		else parseMathExp(fn, node);
+	}
+
 	private static void parseWhile(FunctionTree fn, Node<Tokens> node) throws Exception {
 		Node<Tokens> n = new Node<>(popToken(TokenType.WHILE, "Missing while decleration"));
 		n.val.type = TokenType.FOR;

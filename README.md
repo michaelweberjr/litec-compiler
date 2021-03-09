@@ -9,7 +9,7 @@ Currently supports:
 * Pre/Post Inc/Decrement: `++`, `--` 
 * Op= operations: `+=`, `-=`, `*=`, `/=`, `%=`, `|=`, `&=`, `^=`, `<<=`, `>>=`
 * Built-in function for printing integers: `print(int x);`
-* Flow control: `if`, `else`, `while`, `break`, `continue`
+* Flow control: `if`, `else`, `for`, `while`, `break`, `continue`
 You can see the provided test_suite.cl for tests of all of the language features
 
 # Usage
