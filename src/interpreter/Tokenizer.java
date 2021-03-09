@@ -317,6 +317,12 @@ public class Tokenizer {
 			}
 			
 			// do numbers first
+			boolean neg = false;
+			if(ch == '-' && Character.isDigit(text.charAt(i+1))) {
+				neg = true;
+				ch = text.charAt(++i);
+			}
+			
 			if(Character.isDigit(ch))
 			{
 				int val = 0;
@@ -326,12 +332,13 @@ public class Tokenizer {
 					i++;
 					if(i == text.length()) break;
 				}
+				if(neg) val = -val;
 				tokens.add(new Tokens(TokenType.NUM, val));
 				i--;
 				continue;
 			}
 			
-			// do symbols and keywords
+			// do symbols and keywords			
 			if(Character.isAlphabetic(ch))
 			{
 				String name = "";

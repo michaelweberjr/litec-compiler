@@ -152,7 +152,9 @@ public class Tokens {
 		case LSH:
 		case RSH:
 		case LESS:
+		case LE:
 		case GRT:
+		case GE:
 		case EQ:
 		case NE:
 		case BAND:

@@ -8,10 +8,9 @@ Currently supports:
 * Bitwise operations: `~`, `&`, `|`, `^`, `<<`, `<<`
 * Pre/Post Inc/Decrement: `++`, `--` 
 * Op= operations: `+=`, `-=`, `*=`, `/=`, `%=`, `|=`, `&=`, `^=`, `<<=`, `>>=`
-* Built-in function for printing integers: print(int x)
-* Basic math operations: add, subtract, multiply, divide and modulus
 * Built-in function for printing integers: `print(int x);`
-For an example see test.cl in the root folder
+* Flow control: `if`, `else`, `while`, `break`, `continue`
+You can see the provided test_suite.cl for tests of all of the language features
 
 # Usage
 You can run the program as a compiler and interpreter, as a compiler only and assemble the x64 bytecode or run the interpreter on previously written x64 assembly. Use the `-h` to see all of the options.
@@ -20,9 +19,9 @@ You can run the program as a compiler and interpreter, as a compiler only and as
 To use compiler use the `-c` switch. If you do not provide an output file with `-o` then compiler will produce `<filename>.asm` as the output to the same folder. You can then use an assembler to assemble the program. For windows you can use `nasm` and `golink`. For the text program you can use the following commands in Windows:
 ```
 litecc -i test.cl
-nasm -f win64 test.asm
-golink /entry:main /console kernel32.dll msvcrt.dll test.obj
-test.exe
+nasm -f win64 test_suite.asm
+golink /entry:main /console kernel32.dll msvcrt.dll test_suite.obj
+test_suite.exe
 ```
 
 ## Interpreter

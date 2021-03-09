@@ -14,7 +14,7 @@ import common.util.Node;
 
 public class Parser {
 	public static ArrayList<FunctionTree> program;
-	private static Stack<Node<Tokens>> loopStack = new Stack<>();
+	public static Stack<Object> loopStack = new Stack<>();
 	
 	public static void run() throws Exception {
 		program = new ArrayList<FunctionTree>();
@@ -115,19 +115,9 @@ public class Parser {
 			popToken(TokenType.SC, "Expected \';\' at end of statement");
 			found = true;
 		}
-		else if(t.type == TokenType.BREAK) {
-			Node<Tokens> n = new Node<>(Tokens.popFront());
-			if(loopStack.isEmpty()) throw new Exception("No loop to break from");
-			n.children.add(loopStack.peek());
-			node.addChild(n);
-			popToken(TokenType.SC, "Expected \';\' at end of statement");
-			found = true;
-		}
-		else if(t.type == TokenType.CONT) {
-			Node<Tokens> n = new Node<>(Tokens.popFront());
-			if(loopStack.isEmpty()) throw new Exception("Not loop to continue from");
-			n.children.add(loopStack.peek());
-			node.addChild(n);
+		else if(t.type == TokenType.BREAK || t.type == TokenType.CONT) {
+			if(loopStack.isEmpty()) throw new ParserError("No loop to break/continue from");
+			node.addChild(new Node<>(Tokens.popFront()));
 			popToken(TokenType.SC, "Expected \';\' at end of statement");
 			found = true;
 		}
@@ -218,24 +208,24 @@ public class Parser {
 		node.addChild(n);
 		
 		while(Tokens.peekFront().type == TokenType.ELSE) {
-			n = new Node<>(Tokens.popFront());
+			Node<Tokens> ne = new Node<>(Tokens.popFront());
 			if(Tokens.peekFront().type == TokenType.IF) {
-				n.val.type = TokenType.ELIF;
+				ne.val.type = TokenType.ELIF;
 				Tokens.popFront();
 				popToken(TokenType.LPAR, "Missing \'(\' in if statement");
-				parseMathExp(fn, n);
+				parseMathExp(fn, ne);
 				popToken(TokenType.RPAR, "Missing \')\' in if statement");
 			}
 			
-			parseCodeBlock(fn, n);
-			node.addChild(n);
-			if(n.val.type == TokenType.ELSE) break;
+			parseCodeBlock(fn, ne);
+			n.addChild(ne);
+			if(ne.val.type == TokenType.ELSE) break;
 		}
 	}
 	
 	private static void parseFor(FunctionTree fn, Node<Tokens> node) throws Exception {
 		Node<Tokens> n = new Node<>(popToken(TokenType.FOR, "Missing for decleration"));
-		loopStack.add(n);
+		loopStack.add(node);
 		popToken(TokenType.LPAR, "Missing \'(\' in if statement");
 		if(Tokens.peekFront().type == TokenType.SC) {
 			Tokens.popFront();
@@ -260,7 +250,7 @@ public class Parser {
 	private static void parseWhile(FunctionTree fn, Node<Tokens> node) throws Exception {
 		Node<Tokens> n = new Node<>(popToken(TokenType.WHILE, "Missing while decleration"));
 		n.val.type = TokenType.FOR;
-		loopStack.add(n);
+		loopStack.add(node);
 		popToken(TokenType.LPAR, "Missing \'(\' in if statement");
 		n.addChild(new Node<>(new Tokens(TokenType.ROOT)));
 		parseMathExp(fn, n);
@@ -507,7 +497,7 @@ public class Parser {
 		
 		node.addChild(stack.pollLast());
 		node = node.children.get(node.children.size()-1);
-		if(Tokens.isMathToken(node.val.type)) {
+		if(Tokens.isMathToken(node.val.type) && Tokens.mathArgCount(node.val.type) > 1) {
 			buildMathTree(stack, node);
 			buildMathTree(stack, node);
 		}

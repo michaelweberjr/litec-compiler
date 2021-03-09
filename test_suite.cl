@@ -46,11 +46,11 @@ void testBitOperations()
 {
 	int x = 255;
 
-	if(x & 15 == 15) print(201);
+	if((x & 15) == 15) print(201);
 	else print(0);
 
 	x = 3;
-	if(x | 6 == 7) print(202);
+	if((x | 6) == 7) print(202);
 	else print(0);
 
 	x = -1;
@@ -167,7 +167,7 @@ void testCmpAndBoolOperations()
 	else print(0);
 
 	x = 0;
-	if((x || y) && !(x || y)) print(416);
+	if((x || y) && !(x && y)) print(416);
 	else print(0);
 }
 
@@ -179,7 +179,7 @@ int factorial(int x)
 
 void testRecursion()
 {
-	if(factorial(6) == 120) print(501);
+	if(factorial(6) == 720) print(501);
 	else print(0);
 
 	if(factorial(-1) == 1) print(502);
@@ -191,15 +191,15 @@ void testFlowControl()
 	int c = 0;
 	while(c++ < 4)
 	{
-		if(c == 0)
+		if(c == 1)
 		{
 			print(601);
 		}
-		else if(c == 1)
+		else if(c == 2)
 		{
 			print(602);
 		}
-		else if(c == 2)
+		else if(c == 3)
 		{
 			print(603);
 		}
@@ -213,6 +213,7 @@ void testFlowControl()
 	{
 		print(i);
 		if(i == 610) break;
+		print(0);
 	}*/
 	
 	c = 0;
@@ -231,9 +232,11 @@ void testFlowControl()
 			if(c++ < 25) continue;
 			print(612);
 			break;
+			print(0);
 		}
 		print(613);
 		break;
+		print(0);
 	}
 	print(614);
 }
@@ -246,4 +249,5 @@ void main()
 	testCmpAndBoolOperations();
 	testRecursion();
 	testFlowControl();
+	print(1);
 }

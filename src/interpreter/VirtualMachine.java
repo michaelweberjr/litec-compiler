@@ -168,23 +168,41 @@ public class VirtualMachine {
 				else flags = CPUFlags.POS;
 				break;
 			case JE:
-				if(flags == CPUFlags.ZERO) registers[RIP] = arg1;
-				continue;
+				if(flags == CPUFlags.ZERO) {
+					registers[RIP] = arg1;
+					continue;
+				}
+				break;
 			case JNE:
-				if(flags != CPUFlags.ZERO) registers[RIP] = arg1;
-				continue;
+				if(flags != CPUFlags.ZERO) {
+					registers[RIP] = arg1;
+					continue;
+				}
+				break;
 			case JL:
-				if(flags == CPUFlags.NEG) registers[RIP] = arg1;
-				continue;
+				if(flags == CPUFlags.NEG) {
+					registers[RIP] = arg1;
+					continue;
+				}
+				break;
 			case JLE:
-				if(flags == CPUFlags.ZERO || flags == CPUFlags.NEG) registers[RIP] = arg1;
-				continue;
+				if(flags == CPUFlags.ZERO || flags == CPUFlags.NEG) {
+					registers[RIP] = arg1;
+					continue;
+				}
+				break;
 			case JG:
-				if(flags == CPUFlags.POS) registers[RIP] = arg1;
-				continue;
+				if(flags == CPUFlags.POS) {
+					registers[RIP] = arg1;
+					continue;
+				}
+				break;
 			case JGE:
-				if(flags == CPUFlags.ZERO || flags == CPUFlags.POS) registers[RIP] = arg1;
-				continue;
+				if(flags == CPUFlags.ZERO || flags == CPUFlags.POS) {
+					registers[RIP] = arg1;
+					continue;
+				}
+				break;
 			default:
 				throw new Exception("Virtual MAchine code error: " + codeSegment.get((int) registers[0]).code);
 			}
