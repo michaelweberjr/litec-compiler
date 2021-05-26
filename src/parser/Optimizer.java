@@ -24,6 +24,15 @@ public class Optimizer {
 				if(Tokens.isMathToken(child.val.type) && Tokens.mathArgCount(child.val.type) > 1) {
 					if(child.children.get(0).val.type == TokenType.NUM && child.children.get(1).val.type == TokenType.NUM) {
 						switch(child.val.type) {
+						case NOT:
+							node.children.set(i, new Node<Tokens>(new Tokens(TokenType.NUM, child.children.get(0).val.val == 0 ? 1 : 0)));
+							break;
+						case NEG:
+							node.children.set(i, new Node<Tokens>(new Tokens(TokenType.NUM, -child.children.get(0).val.val)));
+							break;
+						case BNOT:
+							node.children.set(i, new Node<Tokens>(new Tokens(TokenType.NUM, ~child.children.get(0).val.val)));
+							break;
 						case PLUS:
 							node.children.set(i, new Node<Tokens>(new Tokens(TokenType.NUM, child.children.get(0).val.val + child.children.get(1).val.val)));
 							break;
@@ -38,6 +47,45 @@ public class Optimizer {
 							break;
 						case MOD:
 							node.children.set(i, new Node<Tokens>(new Tokens(TokenType.NUM, child.children.get(0).val.val % child.children.get(1).val.val)));
+							break;
+						case BOR:
+							node.children.set(i, new Node<Tokens>(new Tokens(TokenType.NUM, child.children.get(0).val.val | child.children.get(1).val.val)));
+							break;
+						case BAND:
+							node.children.set(i, new Node<Tokens>(new Tokens(TokenType.NUM, child.children.get(0).val.val & child.children.get(1).val.val)));
+							break;
+						case BXOR:
+							node.children.set(i, new Node<Tokens>(new Tokens(TokenType.NUM, child.children.get(0).val.val ^ child.children.get(1).val.val)));
+							break;
+						case LSH:
+							node.children.set(i, new Node<Tokens>(new Tokens(TokenType.NUM, child.children.get(0).val.val << child.children.get(1).val.val)));
+							break;
+						case RSH:
+							node.children.set(i, new Node<Tokens>(new Tokens(TokenType.NUM, child.children.get(0).val.val >> child.children.get(1).val.val)));
+							break;
+						case EQ:
+							node.children.set(i, new Node<Tokens>(new Tokens(TokenType.NUM, (child.children.get(0).val.val == child.children.get(1).val.val) ? 1 : 0)));
+							break;
+						case NE:
+							node.children.set(i, new Node<Tokens>(new Tokens(TokenType.NUM, (child.children.get(0).val.val != child.children.get(1).val.val) ? 1 : 0)));
+							break;
+						case LESS:
+							node.children.set(i, new Node<Tokens>(new Tokens(TokenType.NUM, (child.children.get(0).val.val < child.children.get(1).val.val) ? 1 : 0)));
+							break;
+						case GRT:
+							node.children.set(i, new Node<Tokens>(new Tokens(TokenType.NUM, (child.children.get(0).val.val > child.children.get(1).val.val) ? 1 : 0)));
+							break;
+						case LE:
+							node.children.set(i, new Node<Tokens>(new Tokens(TokenType.NUM, (child.children.get(0).val.val <= child.children.get(1).val.val) ? 1 : 0)));
+							break;
+						case GE:
+							node.children.set(i, new Node<Tokens>(new Tokens(TokenType.NUM, (child.children.get(0).val.val >= child.children.get(1).val.val) ? 1 : 0)));
+							break;
+						case OR:
+							node.children.set(i, new Node<Tokens>(new Tokens(TokenType.NUM, (child.children.get(0).val.val != 0) || (child.children.get(1).val.val != 0) ? 1 : 0)));
+							break;
+						case AND:
+							node.children.set(i, new Node<Tokens>(new Tokens(TokenType.NUM, (child.children.get(0).val.val != 0) && (child.children.get(1).val.val != 0) ? 1 : 0)));
 							break;
 						default:
 							break;

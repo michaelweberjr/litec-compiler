@@ -2,7 +2,7 @@
 A compiler/interpreter for a small subset of C written in Java. The compiler produces x64 assembly as the intermediate bytecode.
 Currently supports:
 * `int` data type is a 64bit signed integer
-* Functions and function nesting
+* Functions, recursion and call nesting
 * Standard math operations: `+`, `-`, `*`, `/`, `%`
 * Boolean operations: `&&`, `||`, `!`, `==`, `!=`, `>`, `>=`, `<`, `<=`
 * Bitwise operations: `~`, `&`, `|`, `^`, `<<`, `<<`
@@ -26,9 +26,9 @@ test_suite.exe
 
 ## Interpreter
 The interpreter is run with `-i`. The interpreter features:
-* Only x64 instructions that the compiler outputs. 
+* Only supports the x64 instructions that the compiler outputs. 
 * Full x64 ABI
-* Call the built in function print with `call print` and pass the argument with the first register for function passing
+* Call the built in function print with `call print` and pass the argument with the first call register for function passing
 * The interpreter skips everything thru `SECTION .DATA` and will skip any definition of a built in function
 
 The following instructions are supported:
