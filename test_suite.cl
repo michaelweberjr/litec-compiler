@@ -241,6 +241,36 @@ void testFlowControl()
 	print(614);
 }
 
+void testOptimizer() {
+	int x = 0;
+	if(x == 0) print(701);
+	else print(0);
+	
+	x = 5;
+	int y = x * 4;
+	if(y == 20) print(701);
+	else print(0);
+	
+	x = 3;
+	y = 32 * x;
+	if(y == 96) print(702);
+	else print(0);
+
+	x = 7168;
+	y = x / 1024;
+	if(y == 7) print(703);
+	else print(y);
+
+	x = 0;
+	x += 1;
+	if(x == 1) print(704);
+	else print(0);
+
+	x -= 1;
+	if(x == 0) print(705);
+	else print(0);
+}
+
 void main()
 {
 	testMathOperations();
@@ -249,5 +279,6 @@ void main()
 	testCmpAndBoolOperations();
 	testRecursion();
 	testFlowControl();
+	testOptimizer();
 	print(1001);
 }
