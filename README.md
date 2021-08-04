@@ -13,19 +13,19 @@ Currently supports:
 You can see the provided test_suite.cl for tests of all of the language features
 
 # Usage
-You can run the program as a compiler and interpreter, as a compiler only and assemble the x64 bytecode or run the interpreter on previously written x64 assembly. Use the `-h` to see all of the options.
+You can run the program as a compiler and interpreter, as a compiler only and assemble the x64 bytecode or run the interpreter on previously written x64 assembly. Use the `-h` switch to see all of the options.
 
 ## Compiler
 To use compiler use the `-c` switch. If you do not provide an output file with `-o` then compiler will produce `<filename>.asm` as the output to the same folder. You can then use an assembler to assemble the program. For windows you can use `nasm` and `golink`. For the text program you can use the following commands in Windows:
 ```
-litecc -i test.cl
+litecc -c test.cl
 nasm -f win64 test_suite.asm
 golink /entry:main /console kernel32.dll msvcrt.dll test_suite.obj
 test_suite.exe
 ```
 
 ## Interpreter
-The interpreter is run with `-i`. The interpreter features:
+The interpreter is run with `-i` switch. The interpreter features:
 * Only supports the x64 instructions that the compiler outputs. 
 * Full x64 ABI
 * Call the built in function print with `call print` and pass the argument with the first call register for function passing
